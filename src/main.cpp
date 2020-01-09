@@ -1262,10 +1262,6 @@ void setup() {
   //Stepper Setup
   pinMode(EN_PIN, OUTPUT);
   pinMode(STEP_PIN, OUTPUT);
-  pinMode(DIR_PIN, OUTPUT);
 
-  pinMode(34,INPUT);
-
-  driver.begin();                 //  SPI: Init CS pins and possible SW SPI pins
-                                  // UART: Init SW UART (if selected) with default 115200 baudrate
-  driver.toff(5);                 // Enables d
+                // Enables d
+}
