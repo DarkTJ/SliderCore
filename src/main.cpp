@@ -75,9 +75,9 @@ void start(OSCMessage &msg, int addrOffset)
 
 void Reverse(OSCMessage &msg, int addrOffset)
 { // Slider Position Modus 1
-  reverse = msg.getFloat(0);
+  reversemsg = msg.getFloat(0);
   Serial.print("reverse? "); 
-  Serial.println(reverse);
+  Serial.println(reversemsg);
 }
 
 void SliderBewegung(OSCMessage &msg, int addrOffset)

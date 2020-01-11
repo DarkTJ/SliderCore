@@ -116,7 +116,7 @@ float intervall2;
 float rotation;
 
 bool go; //ist der Slider an oder ist der Slider aus?
-bool reverse; // Modus 1 reverse an oder aus 
+bool reversemsg; // Modus 1 reverse an oder aus 
 
 float Beschleunigung; //Beschleunigungsart zwischen linear und smooth
 
