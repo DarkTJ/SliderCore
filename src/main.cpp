@@ -41,6 +41,13 @@ void setup()
   Serial.println(localPort);
 }
 
+void SendOSCMessage(OSCMessage msgOUT, float wert){
+    msgOUT.add(Pankopf);
+    Udp.beginPacket(Udp.remoteIP(), destPort);    //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
+    msgOUT.send(Udp); // send the bytes
+    Udp.endPacket(); // mark the end of the OSC Packet
+    msgOUT.empty(); // free space occupied by message
+}
 void Modus(OSCMessage &msg, int addrOffset)
 { // In welchem Modus sind wir
 
@@ -94,21 +101,11 @@ void Pankopf_Bewegung(OSCMessage &msg, int addrOffset)
   Pankopf = msg.getFloat(0);
   if (modus == 1)
   {
-    OSCMessage msgOUT("/modus_1/pan_position");
-    msgOUT.add(Pankopf);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();                            // free space occupied by message
+    SendOSCMessage("/modus_1/pan_position",Pankopf);
   }
   if (modus == 0)
   {
-    OSCMessage msgOUT("/modus_0/pan_position");
-    msgOUT.add(Pankopf);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();                            // free space occupied by message
+    SendOSCMessage("/modus_0/pan_position",Pankopf);
   }
 
   Serial.print("Pankopf = : ");
@@ -312,36 +309,21 @@ void DauerKeyFrame1(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_0_1 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 0 1?= : ");
     Serial.println(KeyFrameDauer_0_1);
-    OSCMessage msgOUT("/modus_0/dauer_anzeige_k1");
-    msgOUT.add(KeyFrameDauer_0_1);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();    
+    SendOSCMessage("/modus_0/dauer_anzeige_k1",KeyFrameDauer_0_1);
   }
   if (modus == 1)
   {
     KeyFrameDauer_1_1 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 1 1?= : ");
     Serial.println(KeyFrameDauer_1_1);
-    OSCMessage msgOUT("/modus_1/dauer_anzeige_1");
-    msgOUT.add(KeyFrameDauer_1_1);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_1/dauer_anzeige_1",KeyFrameDauer_1_1);  
   }
   if (modus == 2)
   {
     KeyFrameDauer_2_1 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 2 1?= : ");
     Serial.println(KeyFrameDauer_2_1);
-    OSCMessage msgOUT("/modus_2/dauer_anzeige_1");
-    msgOUT.add(KeyFrameDauer_2_1);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_2/dauer_anzeige_1",KeyFrameDauer_2_1);  
   }
 }
 
@@ -352,36 +334,21 @@ void PauseKeyFrame1(OSCMessage &msg, int addrOffset)
     KeyFramePause_0_1 = msg.getFloat(0);
     Serial.print("KeyFramePause 0 1?= : ");
     Serial.println(KeyFramePause_0_1);
-    OSCMessage msgOUT("/modus_0/pause_anzeige_k2");
-    msgOUT.add(KeyFramePause_0_1);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_0/pause_anzeige_k2",KeyFramePause_0_1);  
   }
   if (modus == 1)
   {
     KeyFramePause_1_1 = msg.getFloat(0);
     Serial.print("KeyFramePause 1 1?= : ");
     Serial.println(KeyFramePause_1_1);
-    OSCMessage msgOUT("/modus_1/pause_anzeige_2");
-    msgOUT.add(KeyFramePause_1_1);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_1/pause_anzeige_2",KeyFramePause_1_1);  
   }
   if (modus == 2)
   {
     KeyFramePause_2_1 = msg.getFloat(0);
     Serial.print("KeyFramePause 2 1?= : ");
     Serial.println(KeyFramePause_2_1);
-    OSCMessage msgOUT("/modus_2/pause_anzeige_2");
-    msgOUT.add(KeyFramePause_2_1);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_2/pause_anzeige_2",KeyFramePause_2_1);  
   }
 }
 
@@ -575,12 +542,7 @@ void DauerKeyFrame2(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_0_2 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 0 2?= : ");
     Serial.println(KeyFrameDauer_0_2);
-    OSCMessage msgOUT("/modus_0/dauer_anzeige_k2");
-    msgOUT.add(KeyFrameDauer_0_2);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_0/dauer_anzeige_k2",KeyFrameDauer_0_2);  
     
   }
   if (modus == 1)
@@ -588,24 +550,14 @@ void DauerKeyFrame2(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_1_2 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 1 2?= : ");
     Serial.println(KeyFrameDauer_1_2);
-    OSCMessage msgOUT("/modus_1/dauer_anzeige_2");
-    msgOUT.add(KeyFrameDauer_1_2);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_1/dauer_anzeige_2",KeyFrameDauer_1_2);  
   }
   if (modus == 2)
   {
     KeyFrameDauer_2_2 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 2 2?= : ");
     Serial.println(KeyFrameDauer_2_2);
-    OSCMessage msgOUT("/modus_2/dauer_anzeige_2");
-    msgOUT.add(KeyFrameDauer_2_2);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_2/dauer_anzeige_2",KeyFrameDauer_2_2);  
   }
 }
 
@@ -616,36 +568,21 @@ void PauseKeyFrame2(OSCMessage &msg, int addrOffset)
     KeyFramePause_0_2 = msg.getFloat(0);
     Serial.print("KeyFramePause 0 2?= : ");
     Serial.println(KeyFramePause_0_2);
-    OSCMessage msgOUT("/modus_0/pause_anzeige_k2");
-    msgOUT.add(KeyFramePause_0_2);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_0/pause_anzeige_k2",KeyFramePause_0_2);  
   }
   if (modus == 1)
   {
     KeyFramePause_1_2 = msg.getFloat(0);
     Serial.print("KeyFramePause 1 2?= : ");
     Serial.println(KeyFramePause_1_2);
-    OSCMessage msgOUT("/modus_1/pause_anzeige_2");
-    msgOUT.add(KeyFramePause_1_2);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_1/pause_anzeige_2",KeyFramePause_1_2);  
   }
   if (modus == 2)
   {
     KeyFramePause_2_2 = msg.getFloat(0);
     Serial.print("KeyFramePause 2 2?= : ");
     Serial.println(KeyFramePause_2_2);
-    OSCMessage msgOUT("/modus_2/pause_anzeige_2");
-    msgOUT.add(KeyFramePause_2_2);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_2/pause_anzeige_2",KeyFramePause_2_2);  
   }
 }
 
@@ -781,24 +718,14 @@ void DauerKeyFrame3(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_1_3 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 1 3?= : ");
     Serial.println(KeyFrameDauer_1_3);
-    OSCMessage msgOUT("/modus_1/dauer_anzeige_3");
-    msgOUT.add(KeyFrameDauer_1_3);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_1/dauer_anzeige_3",KeyFrameDauer_1_3);  
   }
   if (modus == 2)
   {
     KeyFrameDauer_2_3 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 2 3?= : ");
     Serial.println(KeyFrameDauer_2_3);
-    OSCMessage msgOUT("/modus_2/dauer_anzeige_3");
-    msgOUT.add(KeyFrameDauer_2_3);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_2/dauer_anzeige_3",KeyFrameDauer_2_3);  
   }
   }
 
@@ -810,12 +737,7 @@ void PauseKeyFrame3(OSCMessage &msg, int addrOffset)
     KeyFramePause_1_3 = msg.getFloat(0);
     Serial.print("KeyFramePause 1 3?= : ");
     Serial.println(KeyFramePause_1_3);
-    OSCMessage msgOUT("/modus_1/pause_anzeige_3");
-    msgOUT.add(KeyFramePause_1_3);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_1/pause_anzeige_3",KeyFramePause_1_3);  
   }
   
   if (modus == 2)
@@ -823,12 +745,7 @@ void PauseKeyFrame3(OSCMessage &msg, int addrOffset)
     KeyFramePause_2_3 = msg.getFloat(0);
     Serial.print("KeyFramePause 2 3?= : ");
     Serial.println(KeyFramePause_2_3);
-    OSCMessage msgOUT("/modus_2/pause_anzeige_3");
-    msgOUT.add(KeyFramePause_2_3);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_2/pause_anzeige_3",KeyFramePause_2_3);  
   }
 }
 
@@ -915,12 +832,7 @@ void PauseKeyFrame4(OSCMessage &msg, int addrOffset)
     KeyFramePause_1_4 = msg.getFloat(0);
     Serial.print("KeyFramePause 1 4?= : ");
     Serial.println(KeyFramePause_1_4);
-    OSCMessage msgOUT("/modus_1/pause_anzeige_4");
-    msgOUT.add(KeyFramePause_1_4);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty();  
+    SendOSCMessage("/modus_1/pause_anzeige_4",KeyFramePause_1_4);  
   }
 }
 //Modus_2---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -930,12 +842,7 @@ void Bilder(OSCMessage &msg, int addrOffset)
 
   Serial.print("Bilder: ");
   Serial.println(bilder);
-  OSCMessage msgOUT("/modus_2/BilderLabel");
-  msgOUT.add(bilder);
-  Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-  msgOUT.send(Udp);                          // send the bytes
-  Udp.endPacket();                           // mark the end of the OSC Packet
-  msgOUT.empty();                            // free space occupied by message
+  SendOSCMessage("/modus_2/BilderLabel",bilder);
 }
 
 void FPS(OSCMessage &msg, int addrOffset)
@@ -944,12 +851,7 @@ void FPS(OSCMessage &msg, int addrOffset)
 
   Serial.print("fps: ");
   Serial.println(fps);
-  OSCMessage msgOUT("/modus_2/fps_anzeige");  //Hier noch adresse eintragem
-  msgOUT.add(fps);
-  Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-  msgOUT.send(Udp);                          // send the bytes
-  Udp.endPacket();                           // mark the end of the OSC Packet
-  msgOUT.empty();                            // free space occupied by message
+  SendOSCMessage("/modus_2/fps_anzeige",fps);
 }
 
 void Sequenzdauer1(OSCMessage &msg, int addrOffset) //Schickt Variable Sequenzdauer1  
@@ -957,12 +859,7 @@ void Sequenzdauer1(OSCMessage &msg, int addrOffset) //Schickt Variable Sequenzda
    //!!!Hier Rechnung einfügen
   Serial.print("sequenzdauer1 : ");
   Serial.println(sequenzdauer1);
-  OSCMessage msgOUT("/modus_2/sequenzdauer_anzeige_1");  //Hier noch adresse eintragem
-  msgOUT.add(sequenzdauer1);
-  Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-  msgOUT.send(Udp);                          // send the bytes
-  Udp.endPacket();                           // mark the end of the OSC Packet
-  msgOUT.empty();                            // free space occupied by message
+  SendOSCMessage("/modus_2/sequenzdauer_anzeige_1",sequenzdauer1);
 }
 
 void Sequenzdauer2(OSCMessage &msg, int addrOffset)  //Schickt Variable Sequenzdauer1  
@@ -970,36 +867,21 @@ void Sequenzdauer2(OSCMessage &msg, int addrOffset)  //Schickt Variable Sequenzd
   //!!!Hier Rechnung einfügen
   Serial.print("sequenzdauer2 : ");
   Serial.println(sequenzdauer2);
-  OSCMessage msgOUT("/modus_2/sequenzdauer_anzeige_2");  //Hier noch adresse eintragem
-  msgOUT.add(sequenzdauer2);
-  Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-  msgOUT.send(Udp);                          // send the bytes
-  Udp.endPacket();                           // mark the end of the OSC Packet
-  msgOUT.empty();                            // free space occupied by message
+  SendOSCMessage("/modus_2/sequenzdauer_anzeige_2",sequenzdauer2 );
 }
 
 void Intervall1(OSCMessage &msg, int addrOffset){
     intervall1 = msg.getFloat(0);
     Serial.print("Intervall1 1?= : ");
     Serial.println(intervall1);
-    OSCMessage msgOUT("/modus_2/intervall_anzeige_1");
-    msgOUT.add(intervall1);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty(); 
+    SendOSCMessage("/modus_2/intervall_anzeige_1",intervall1); 
 }
 
 void Intervall2(OSCMessage &msg, int addrOffset){
     intervall2 = msg.getFloat(0);
     Serial.print("Intervall2 1?= : ");
     Serial.println(intervall2);
-    OSCMessage msgOUT("/modus_2/intervall_anzeige_2");
-    msgOUT.add(intervall2);
-    Udp.beginPacket(Udp.remoteIP(), destPort); //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
-    msgOUT.send(Udp);                          // send the bytes
-    Udp.endPacket();                           // mark the end of the OSC Packet
-    msgOUT.empty(); 
+    SendOSCMessage("/modus_2/intervall_anzeige_2",intervall2); 
 }
 
 //Modus 3----------------------------------------------------------------------------------------------------------------------------------------------------
