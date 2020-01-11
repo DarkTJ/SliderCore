@@ -1,5 +1,6 @@
 #include <TMCStepper.h>
 #include <TMCStepper_UTILITY.h>
+#include <AccelStepper.h>
 
 #include <OSCBundle.h>
 #include <WiFi.h>
