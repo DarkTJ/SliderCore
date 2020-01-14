@@ -117,6 +117,7 @@ float intervall2;
 float rotation;
 
 bool go; //ist der Slider an oder ist der Slider aus?
+int goModus;    // In welchem Modus läuft der Slider gerade;
 bool reversemsg; // Modus 1 reverse an oder aus 
 
 float Beschleunigung; //Beschleunigungsart zwischen linear und smooth
@@ -129,7 +130,7 @@ int modus; //Nummer des aktuellen Modoi
 int bilder; //Anzahl der Bilder
 
 //Slider
-float SliderPositon;
+// float SliderPosition; WECLCHER WAR DAS
 float SliderPan;
 float SliderTilt;
 

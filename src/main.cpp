@@ -22,6 +22,25 @@ const unsigned int localPort = 8888;   // Incoming-Ports des Hosts für ankommen
 OSCErrorCode error;
 
 
+////////////////////////////////////////////////////////////////////////////7
+// Stepper setup
+AccelStepper StepperX(AccelStepper::DRIVER,0,1);  //Slider
+AccelStepper StepperY(AccelStepper::DRIVER,2,3);  //Pan
+AccelStepper StepperZ(AccelStepper::DRIVER,4,5);  //Tilt
+
+#define EN_PINX           33 // Enable Slider Driver
+#define EN_PINY           33 // Enable Pan Driver
+#define EN_PINZ           33 // Enable  Tilt Driver
+#define CS_PINX          15 // Chip select X Achse (Slider)
+#define CS_PINY          100 // Chip select Y Achse (Pan)
+#define CS_PINZ          200 // Chip select Z Achse (Tilt)
+
+#define SW_MOSI          13 // Software Master Out Slave In (MOSI)
+#define SW_MISO          12 // Software Master In Slave Out (MISO)
+#define SW_SCK           14 // Software Slave Clock (SCK)
+
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -29,7 +48,7 @@ void setup()
 
   // Server starten + Feedback
   Serial.println("Configuring access point...");
-  WiFi.softAP(ssid, password);
+  WiFi.softAP(ssid);
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("ESP IP address: ");
   Serial.println(myIP);
@@ -42,34 +61,61 @@ void setup()
   Serial.println(localPort);
 }
 
+
+
+
+#pragma region 
+
+
 void SendOSCMessage(OSCMessage msgOUT, float wert){
-    msgOUT.add(Pankopf);
+    msgOUT.add(wert);
+    Serial.println("Send Float");
     Udp.beginPacket(Udp.remoteIP(), destPort);    //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
     msgOUT.send(Udp); // send the bytes
     Udp.endPacket(); // mark the end of the OSC Packet
     msgOUT.empty(); // free space occupied by message
 }
-void Modus(OSCMessage &msg, int addrOffset)
+void SendOSCMessage(OSCMessage msgOUT, String wert){
+    OSCBundle bundle;
+    bundle.add(msgOUT).add(wert);
+    Serial.println("Send String");
+    Udp.beginPacket(Udp.remoteIP(), destPort);    //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
+    bundle.send(Udp); // send the bytes
+    Udp.endPacket(); // mark the end of the OSC Packet
+    bundle.empty(); // free space occupied by message
+    msgOUT.empty();
+}
+void SendOSCMessage(OSCMessage msgOUT, int wert){
+    msgOUT.add(wert);
+    Serial.println("Send Int");
+    Udp.beginPacket(Udp.remoteIP(), destPort);    //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
+    msgOUT.send(Udp); // send the bytes
+    Udp.endPacket(); // mark the end of the OSC Packet
+    msgOUT.empty(); // free space occupied by message
+}
+
+
+void Modus0(OSCMessage &msg, int addrOffset)
 { // In welchem Modus sind wir
-
-  modus = msg.getFloat(0);
-
-  if (modus == 1)
-  {
-    modus = 0;
-  }
-  if (modus == 3)
-  {
-    modus = 1;
-  }
-  if (modus == 5)
-  {
-    modus = 2;
-  }
-  if (modus == 7)
-  {
-    modus = 3;
-  }
+  modus = 0;
+  Serial.print("Modus:"); //Hier einfügen, was gemacht werden soll
+  Serial.println(modus);
+}
+void Modus1(OSCMessage &msg, int addrOffset)
+{ // In welchem Modus sind wir
+  modus = 1;
+  Serial.print("Modus:"); //Hier einfügen, was gemacht werden soll
+  Serial.println(modus);
+}
+void Modus2(OSCMessage &msg, int addrOffset)
+{ // In welchem Modus sind wir
+  modus = 2;
+  Serial.print("Modus:"); //Hier einfügen, was gemacht werden soll
+  Serial.println(modus);
+}
+void Modus3(OSCMessage &msg, int addrOffset)
+{ // In welchem Modus sind wir
+  modus = 3;
   Serial.print("Modus:"); //Hier einfügen, was gemacht werden soll
   Serial.println(modus);
 }
@@ -77,7 +123,18 @@ void Modus(OSCMessage &msg, int addrOffset)
 void start(OSCMessage &msg, int addrOffset)
 { // Slider Position Modus 1
   go = msg.getFloat(0);
-  Serial.print("Start? "); //Hier einfügen, was gemacht werden soll
+
+  if (go == 1) {
+    goModus = modus;
+    SendOSCMessage("/modus_0/start_label","Stop");
+    SendOSCMessage("modus_0/slider_fader",0.3f);
+    //stepperStart();
+  } else {
+    SendOSCMessage("/modus_0/start_label","Start");
+    //stepperStop();
+  }
+
+  Serial.print("Start? "); 
   Serial.println(go);
 }
 
@@ -91,7 +148,7 @@ void Reverse(OSCMessage &msg, int addrOffset)
 void SliderBewegung(OSCMessage &msg, int addrOffset)
 { // Slider Position Modus 1
 
-  SliderPositon = msg.getFloat(0);
+  SliderPosition = msg.getFloat(0);
   Serial.print("Sliderposition = : "); //Hier einfügen, was gemacht werden soll
   Serial.println(SliderPosition);
 }
@@ -310,21 +367,21 @@ void DauerKeyFrame1(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_0_1 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 0 1?= : ");
     Serial.println(KeyFrameDauer_0_1);
-    SendOSCMessage("/modus_0/dauer_anzeige_k1",KeyFrameDauer_0_1);
+    SendOSCMessage("/modus_0/dauer_anzeige_k1",String(KeyFrameDauer_0_1));
   }
   if (modus == 1)
   {
     KeyFrameDauer_1_1 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 1 1?= : ");
     Serial.println(KeyFrameDauer_1_1);
-    SendOSCMessage("/modus_1/dauer_anzeige_1",KeyFrameDauer_1_1);  
+    SendOSCMessage("/modus_1/dauer_anzeige_1",String(KeyFrameDauer_1_1));  
   }
   if (modus == 2)
   {
     KeyFrameDauer_2_1 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 2 1?= : ");
     Serial.println(KeyFrameDauer_2_1);
-    SendOSCMessage("/modus_2/dauer_anzeige_1",KeyFrameDauer_2_1);  
+    SendOSCMessage("/modus_2/dauer_anzeige_1",String(KeyFrameDauer_2_1));  
   }
 }
 
@@ -335,21 +392,21 @@ void PauseKeyFrame1(OSCMessage &msg, int addrOffset)
     KeyFramePause_0_1 = msg.getFloat(0);
     Serial.print("KeyFramePause 0 1?= : ");
     Serial.println(KeyFramePause_0_1);
-    SendOSCMessage("/modus_0/pause_anzeige_k2",KeyFramePause_0_1);  
+    SendOSCMessage("/modus_0/pause_anzeige_k2",String(KeyFrameDauer_0_1));  
   }
   if (modus == 1)
   {
     KeyFramePause_1_1 = msg.getFloat(0);
     Serial.print("KeyFramePause 1 1?= : ");
     Serial.println(KeyFramePause_1_1);
-    SendOSCMessage("/modus_1/pause_anzeige_2",KeyFramePause_1_1);  
+    SendOSCMessage("/modus_1/pause_anzeige_2",String(KeyFrameDauer_1_1));  
   }
   if (modus == 2)
   {
     KeyFramePause_2_1 = msg.getFloat(0);
     Serial.print("KeyFramePause 2 1?= : ");
     Serial.println(KeyFramePause_2_1);
-    SendOSCMessage("/modus_2/pause_anzeige_2",KeyFramePause_2_1);  
+    SendOSCMessage("/modus_2/pause_anzeige_2",String(KeyFrameDauer_2_1));  
   }
 }
 
@@ -543,7 +600,7 @@ void DauerKeyFrame2(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_0_2 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 0 2?= : ");
     Serial.println(KeyFrameDauer_0_2);
-    SendOSCMessage("/modus_0/dauer_anzeige_k2",KeyFrameDauer_0_2);  
+    SendOSCMessage("/modus_0/dauer_anzeige_k2",String(KeyFrameDauer_0_2));  
     
   }
   if (modus == 1)
@@ -551,14 +608,14 @@ void DauerKeyFrame2(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_1_2 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 1 2?= : ");
     Serial.println(KeyFrameDauer_1_2);
-    SendOSCMessage("/modus_1/dauer_anzeige_2",KeyFrameDauer_1_2);  
+    SendOSCMessage("/modus_1/dauer_anzeige_2",String(KeyFrameDauer_1_2));  
   }
   if (modus == 2)
   {
     KeyFrameDauer_2_2 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 2 2?= : ");
     Serial.println(KeyFrameDauer_2_2);
-    SendOSCMessage("/modus_2/dauer_anzeige_2",KeyFrameDauer_2_2);  
+    SendOSCMessage("/modus_2/dauer_anzeige_2",String(KeyFrameDauer_2_2));  
   }
 }
 
@@ -569,21 +626,21 @@ void PauseKeyFrame2(OSCMessage &msg, int addrOffset)
     KeyFramePause_0_2 = msg.getFloat(0);
     Serial.print("KeyFramePause 0 2?= : ");
     Serial.println(KeyFramePause_0_2);
-    SendOSCMessage("/modus_0/pause_anzeige_k2",KeyFramePause_0_2);  
+    SendOSCMessage("/modus_0/pause_anzeige_k2",String(KeyFramePause_0_2));  
   }
   if (modus == 1)
   {
     KeyFramePause_1_2 = msg.getFloat(0);
     Serial.print("KeyFramePause 1 2?= : ");
     Serial.println(KeyFramePause_1_2);
-    SendOSCMessage("/modus_1/pause_anzeige_2",KeyFramePause_1_2);  
+    SendOSCMessage("/modus_1/pause_anzeige_2",String(KeyFramePause_1_2));  
   }
   if (modus == 2)
   {
     KeyFramePause_2_2 = msg.getFloat(0);
     Serial.print("KeyFramePause 2 2?= : ");
     Serial.println(KeyFramePause_2_2);
-    SendOSCMessage("/modus_2/pause_anzeige_2",KeyFramePause_2_2);  
+    SendOSCMessage("/modus_2/pause_anzeige_2",String(KeyFramePause_2_2));  
   }
 }
 
@@ -719,14 +776,14 @@ void DauerKeyFrame3(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_1_3 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 1 3?= : ");
     Serial.println(KeyFrameDauer_1_3);
-    SendOSCMessage("/modus_1/dauer_anzeige_3",KeyFrameDauer_1_3);  
+    SendOSCMessage("/modus_1/dauer_anzeige_3",String(KeyFrameDauer_1_3));  
   }
   if (modus == 2)
   {
     KeyFrameDauer_2_3 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 2 3?= : ");
     Serial.println(KeyFrameDauer_2_3);
-    SendOSCMessage("/modus_2/dauer_anzeige_3",KeyFrameDauer_2_3);  
+    SendOSCMessage("/modus_2/dauer_anzeige_3",String(KeyFrameDauer_2_3));  
   }
   }
 
@@ -738,7 +795,7 @@ void PauseKeyFrame3(OSCMessage &msg, int addrOffset)
     KeyFramePause_1_3 = msg.getFloat(0);
     Serial.print("KeyFramePause 1 3?= : ");
     Serial.println(KeyFramePause_1_3);
-    SendOSCMessage("/modus_1/pause_anzeige_3",KeyFramePause_1_3);  
+    SendOSCMessage("/modus_1/pause_anzeige_3",String(KeyFramePause_1_3));  
   }
   
   if (modus == 2)
@@ -746,7 +803,7 @@ void PauseKeyFrame3(OSCMessage &msg, int addrOffset)
     KeyFramePause_2_3 = msg.getFloat(0);
     Serial.print("KeyFramePause 2 3?= : ");
     Serial.println(KeyFramePause_2_3);
-    SendOSCMessage("/modus_2/pause_anzeige_3",KeyFramePause_2_3);  
+    SendOSCMessage("/modus_2/pause_anzeige_3",String(KeyFramePause_2_3));  
   }
 }
 
@@ -833,7 +890,7 @@ void PauseKeyFrame4(OSCMessage &msg, int addrOffset)
     KeyFramePause_1_4 = msg.getFloat(0);
     Serial.print("KeyFramePause 1 4?= : ");
     Serial.println(KeyFramePause_1_4);
-    SendOSCMessage("/modus_1/pause_anzeige_4",KeyFramePause_1_4);  
+    SendOSCMessage("/modus_1/pause_anzeige_4",String(KeyFramePause_1_4));  
   }
 }
 //Modus_2---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -860,7 +917,7 @@ void Sequenzdauer1(OSCMessage &msg, int addrOffset) //Schickt Variable Sequenzda
    //!!!Hier Rechnung einfügen
   Serial.print("sequenzdauer1 : ");
   Serial.println(sequenzdauer1);
-  SendOSCMessage("/modus_2/sequenzdauer_anzeige_1",sequenzdauer1);
+  SendOSCMessage("/modus_2/sequenzdauer_anzeige_1","lol");
 }
 
 void Sequenzdauer2(OSCMessage &msg, int addrOffset)  //Schickt Variable Sequenzdauer1  
@@ -868,21 +925,21 @@ void Sequenzdauer2(OSCMessage &msg, int addrOffset)  //Schickt Variable Sequenzd
   //!!!Hier Rechnung einfügen
   Serial.print("sequenzdauer2 : ");
   Serial.println(sequenzdauer2);
-  SendOSCMessage("/modus_2/sequenzdauer_anzeige_2",sequenzdauer2 );
+  SendOSCMessage("/modus_2/sequenzdauer_anzeige_2","lol" );
 }
 
 void Intervall1(OSCMessage &msg, int addrOffset){
     intervall1 = msg.getFloat(0);
     Serial.print("Intervall1 1?= : ");
     Serial.println(intervall1);
-    SendOSCMessage("/modus_2/intervall_anzeige_1",intervall1); 
+    SendOSCMessage("/modus_2/intervall_anzeige_1","lol"); 
 }
 
 void Intervall2(OSCMessage &msg, int addrOffset){
     intervall2 = msg.getFloat(0);
     Serial.print("Intervall2 1?= : ");
     Serial.println(intervall2);
-    SendOSCMessage("/modus_2/intervall_anzeige_2",intervall2); 
+    SendOSCMessage("/modus_2/intervall_anzeige_2","lol"); 
 }
 
 //Modus 3----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -936,27 +993,28 @@ void OSCMsgReceive()
       msgIN.fill(Udp.read());
     if (!msgIN.hasError())
     {
-      /*        msgIN.route("/modus_0", Modus); // die 4 Modi mit alle der gleichen Funktion
-              msgIN.route("/modus_1", Modus);
-              msgIN.route("/modus_2", Modus);
-              msgIN.route("/modus_3", Modus);
-      */
+      msgIN.route("/modus_0/s", Modus0); // die 4 Modi mit alle der gleichen Funktion
+      msgIN.route("/modus_1/s", Modus1);
+      msgIN.route("/modus_2/s", Modus2);
+      msgIN.route("/modus_3/s", Modus3);
+
+
 
       msgIN.route("/modus_0/start", start); //Startknöpfe
       msgIN.route("/modus_1/start", start);
       msgIN.route("/modus_2/start", start);
 
-    msgIN.route("/modus_0/slider_fader", SliderBewegung); //modus 0 ruft gleiche Funktionen auf wie modus 1
+       msgIN.route("/modus_0/slider_fader", SliderBewegung); //modus 0 ruft gleiche Funktionen auf wie modus 1
     msgIN.route("/modus_0/pan_encoder", Pankopf_Bewegung);
-    msgIN.route("/modus_0/tilt_position", Tiltkopf_Bewegung);
+      msgIN.route("/modus_0/tilt_position", Tiltkopf_Bewegung);
 
       msgIN.route("/modus_1/slider_fader", SliderBewegung); //Positionseinstellungen
       msgIN.route("/modus_1/pan_encoder", Pankopf_Bewegung);
       msgIN.route("/modus_1/tilt_position", Tiltkopf_Bewegung);
 
-    msgIN.route("/modus_2/slider_fader", SliderBewegung); //Positionseinstellungen
+      msgIN.route("/modus_2/slider_fader", SliderBewegung); //Positionseinstellungen
     msgIN.route("/modus_2/pan_encoder", Pankopf_Bewegung);
-    msgIN.route("/modus_2/tilt_position", Tiltkopf_Bewegung);
+          msgIN.route("/modus_2/tilt_position", Tiltkopf_Bewegung);
 
       
 
@@ -1028,7 +1086,7 @@ void OSCMsgReceive()
   }
 }
 
-
+#pragma endregion
 
 
 void loop()
