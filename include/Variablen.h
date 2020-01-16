@@ -4,9 +4,12 @@
 
 int Geschwindigkeit; //Geschwindikeit des Sliders
 
-float Tiltkopf;
-float Pankopf;
-float SliderPosition;
+long Tiltkopf;
+long MaxTiltkopf;
+long Pankopf;
+long MaxPankopf;
+long SliderPosition;
+long MaxSliderPosition;
 
 //Variablen für KeyFrame Toggle
 bool KeyFrame_0_1; //Keyframes 1
@@ -125,7 +128,8 @@ float Beschleunigung; //Beschleunigungsart zwischen linear und smooth
 int Bildzahl;   //Anzahl der Bilder zwischen zwei Keyframes im Modus2
 int Wartedauer; //Zeit zwischen den Bildern
 
-int modus; //Nummer des aktuellen Modoi
+int modus; //Nummer des aktuellen Modi in UI    
+int modusSlider; //     Nummer des aktuellen Modi des Sliders
 
 int bilder; //Anzahl der Bilder
 

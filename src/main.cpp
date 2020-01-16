@@ -9,7 +9,7 @@
 
 #include <Variablen.h>
 
-const char *ssid = "Slider";         // Name des Netzwerks
+const char *ssid = "SliderMasterVersion";         // Name des Netzwerks
 const char *password = "slideslide"; // Passwort des Netzwerks
 
 WiFiServer server(80); // Server Instanz -> ESP als Access Point
@@ -29,8 +29,8 @@ AccelStepper stepperY(AccelStepper::DRIVER,2,3);  //Pan
 AccelStepper stepperZ(AccelStepper::DRIVER,4,5);  //Tilt
 
 #define EN_PINX           33 // Enable Slider Driver
-#define EN_PINY           33 // Enable Pan Driver
-#define EN_PINZ           33 // Enable  Tilt Driver
+#define EN_PINY           333 // Enable Pan Driver
+#define EN_PINZ           3333 // Enable  Tilt Driver
 #define CS_PINX          15 // Chip select X Achse (Slider)
 #define CS_PINY          100 // Chip select Y Achse (Pan)
 #define CS_PINZ          200 // Chip select Z Achse (Tilt)
@@ -47,8 +47,9 @@ using namespace TMC2130_n;
 // Stepper und Steppertimer initialisierung:
 
 //TMC2130Stepper driver(CS_PIN, R_SENSE);                           // Hardware SPI
-TMC2130Stepper driver(CS_PINX, R_SENSE, SW_MOSI, SW_MISO, SW_SCK); // Software SPI
-
+TMC2130Stepper driverX(CS_PINX, R_SENSE, SW_MOSI, SW_MISO, SW_SCK); // Software SPI
+TMC2130Stepper driverY(CS_PINY, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
+TMC2130Stepper driverZ(CS_PINZ, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
 
 void setup()
 {
@@ -72,16 +73,74 @@ void setup()
 
   pinMode(EN_PINX, OUTPUT);
 
-  driver.begin(); 
-  driver.toff(5);                 // Enables driver in software
-  driver.rms_current(600);        // Set motor RMS current
-  driver.microsteps(16);          // Set microsteps to 1/16th
-//driver.en_spreadCycle(false);   // Toggle spreadCycle on TMC2208/2209/2224
-  driver.pwm_autoscale(true);     // Needed for stealthChop
+
+
+  driverX.begin(); 
+  driverX.toff(5);                 // Enables driver in software
+  driverX.rms_current(600);        // Set motor RMS current
+  driverX.microsteps(16);          // Set microsteps to 1/16th
+  driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  driverX.pwm_autoscale(true);     // Needed for stealthChop
+
+  stepperX.moveTo(random(1200,60000));
 
 }
 
+#pragma region Stepper
 
+void sliderAusmessen() {
+  modusSlider = -2; // auf Nullposition fahren
+  driverX.en_pwm_mode(false);   // disable stealthcop für stallguard  
+  driverX.reset();
+  stepperX.setAcceleration(5000);
+  stepperX.setMaxSpeed(50000);
+  stepperX.move(-100000000);
+
+}
+
+void stallDetect(uint32_t ms)  {
+
+  static uint32_t last_time=0;
+
+  if((ms-last_time) > 50) { //run every 0.05s
+    last_time = ms;
+
+    DRV_STATUS_t drv_status{0};
+    drv_status.sr = driverX.DRV_STATUS();
+
+
+    
+
+    //Messung
+
+    if (drv_status.sg_result == 0 && modus == -2) {   //zurückfahen (modus -2)
+      
+
+      stepperX.setCurrentPosition(0);
+
+      modus = -1;
+      driverX.reset();
+      Serial.println(" F ");
+      drv_status.sg_result = 1;
+      stepperX.moveTo(100000);
+
+    } else if (drv_status.sg_result == 0 && modus == -1) {  // an maximum fahren  (modus -1)
+      
+      stepperX.stop();
+      MaxSliderPosition = stepperX.currentPosition();
+      modus = 0;
+      driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+      driverX.reset();
+      Serial.println(MaxSliderPosition);
+    
+    }
+
+    
+  }
+}
+
+
+#pragma endregion Stepper
 
 
 #pragma region 
@@ -179,11 +238,11 @@ void Pankopf_Bewegung(OSCMessage &msg, int addrOffset)
   Pankopf = msg.getFloat(0);
   if (modus == 1)
   {
-    SendOSCMessage("/modus_1/pan_position",Pankopf);
+    SendOSCMessage("/modus_1/pan_position",0.55f);
   }
   if (modus == 0)
   {
-    SendOSCMessage("/modus_0/pan_position",Pankopf);
+    SendOSCMessage("/modus_0/pan_position",0.55f);
   }
 
   Serial.print("Pankopf = : ");
@@ -1111,16 +1170,13 @@ void OSCMsgReceive()
 
 void loop()
 {
-  OSCMsgReceive();
-
-
-
+  //OSCMsgReceive();
   
-
+  Serial.println(stepperX.distanceToGo());
   if (stepperX.distanceToGo() == 0)
   {
 
-      stepperX.moveTo(random(1200,60000));
+      
 
       stepperX.setMaxSpeed(10000);
 
