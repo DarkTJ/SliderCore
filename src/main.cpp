@@ -24,9 +24,9 @@ OSCErrorCode error;
 
 ////////////////////////////////////////////////////////////////////////////7
 // Stepper setup
-AccelStepper StepperX(AccelStepper::DRIVER,0,1);  //Slider
-AccelStepper StepperY(AccelStepper::DRIVER,2,3);  //Pan
-AccelStepper StepperZ(AccelStepper::DRIVER,4,5);  //Tilt
+AccelStepper stepperX(AccelStepper::DRIVER,26,25);  //Slider
+AccelStepper stepperY(AccelStepper::DRIVER,2,3);  //Pan
+AccelStepper stepperZ(AccelStepper::DRIVER,4,5);  //Tilt
 
 #define EN_PINX           33 // Enable Slider Driver
 #define EN_PINY           33 // Enable Pan Driver
@@ -39,6 +39,15 @@ AccelStepper StepperZ(AccelStepper::DRIVER,4,5);  //Tilt
 #define SW_MISO          12 // Software Master In Slave Out (MISO)
 #define SW_SCK           14 // Software Slave Clock (SCK)
 
+
+using namespace TMC2130_n;
+#define STALL_VALUE 
+#define R_SENSE 0.11f 
+
+// Stepper und Steppertimer initialisierung:
+
+//TMC2130Stepper driver(CS_PIN, R_SENSE);                           // Hardware SPI
+TMC2130Stepper driver(CS_PINX, R_SENSE, SW_MOSI, SW_MISO, SW_SCK); // Software SPI
 
 
 void setup()
@@ -59,6 +68,17 @@ void setup()
   Udp.begin(localPort);
   Serial.print("Local port: ");
   Serial.println(localPort);
+
+
+  pinMode(EN_PINX, OUTPUT);
+
+  driver.begin(); 
+  driver.toff(5);                 // Enables driver in software
+  driver.rms_current(600);        // Set motor RMS current
+  driver.microsteps(16);          // Set microsteps to 1/16th
+//driver.en_spreadCycle(false);   // Toggle spreadCycle on TMC2208/2209/2224
+  driver.pwm_autoscale(true);     // Needed for stealthChop
+
 }
 
 
@@ -1092,4 +1112,24 @@ void OSCMsgReceive()
 void loop()
 {
   OSCMsgReceive();
+
+
+
+  
+
+  if (stepperX.distanceToGo() == 0)
+  {
+
+      stepperX.moveTo(random(1200,60000));
+
+      stepperX.setMaxSpeed(10000);
+
+      stepperX.setAcceleration(700);
+
+      Serial.println("Random");
+
+  }
+  stepperX.run();
+
+  
 }
