@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #include <TMCStepper.h>
 #include <TMCStepper_UTILITY.h>
 #include <AccelStepper.h>
@@ -24,37 +26,48 @@ OSCErrorCode error;
 
 ////////////////////////////////////////////////////////////////////////////7
 // Stepper setup
-AccelStepper stepperX(AccelStepper::DRIVER,26,25);  //Slider
-AccelStepper stepperY(AccelStepper::DRIVER,2,3);  //Pan
-AccelStepper stepperZ(AccelStepper::DRIVER,4,5);  //Tilt
 
-#define EN_PINX           33 // Enable Slider Driver
-#define EN_PINY           333 // Enable Pan Driver
-#define EN_PINZ           3333 // Enable  Tilt Driver
-#define CS_PINX          15 // Chip select X Achse (Slider)
-#define CS_PINY          100 // Chip select Y Achse (Pan)
-#define CS_PINZ          200 // Chip select Z Achse (Tilt)
 
-#define SW_MOSI          13 // Software Master Out Slave In (MOSI)
-#define SW_MISO          12 // Software Master In Slave Out (MISO)
-#define SW_SCK           14 // Software Slave Clock (SCK)
+#define EN_PINX           23 // Enable Slider Driver
+//#define EN_PINY           333 // Enable Pan Driver
+//#define EN_PINZ           3333 // Enable  Tilt Driver
+#define CS_PINX         15 // Chip select X Achse (Slider)
+//#define CS_PINY          100 // Chip select Y Achse (Pan)
+//#define CS_PINZ          200 // Chip select Z Achse (Tilt)
+
+#define SW_MOSI          5 // Software Master Out Slave In (MOSI)
+#define SW_MISO          17 // Software Master In Slave Out (MISO)
+#define SW_SCK           16 // Software Slave Clock (SCK)
+
+#define STEPX            22
+#define DIRX             21
 
 
 using namespace TMC2130_n;
-#define STALL_VALUE 
+
+#define STALL_VALUE 20
 #define R_SENSE 0.11f 
 
 // Stepper und Steppertimer initialisierung:
 
-//TMC2130Stepper driver(CS_PIN, R_SENSE);                           // Hardware SPI
+//TMC2130Stepper driverX(CS_PINX, R_SENSE);                           // Hardware SPI
 TMC2130Stepper driverX(CS_PINX, R_SENSE, SW_MOSI, SW_MISO, SW_SCK); // Software SPI
-TMC2130Stepper driverY(CS_PINY, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
-TMC2130Stepper driverZ(CS_PINZ, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
+//TMC2130Stepper driverY(CS_PINY, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
+//TMC2130Stepper driverZ(CS_PINZ, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
+
+AccelStepper stepperX(AccelStepper::DRIVER,STEPX,DIRX);  //Slider
+//AccelStepper stepperY(AccelStepper::DRIVER,200,300);  //Pan
+//AccelStepper stepperZ(AccelStepper::DRIVER,400,500);  //Tilt
 
 void setup()
 {
   Serial.begin(115200);
-  pinMode(13, OUTPUT);
+
+  pinMode(EN_PINX, OUTPUT);
+  pinMode(STEPX, OUTPUT);
+  pinMode(DIRX, OUTPUT);
+  digitalWrite(EN_PINX, LOW);      // Enable driver in hardware
+
 
   // Server starten + Feedback
   Serial.println("Configuring access point...");
@@ -70,20 +83,14 @@ void setup()
   Serial.print("Local port: ");
   Serial.println(localPort);
 
-
-  pinMode(EN_PINX, OUTPUT);
-
-
-
   driverX.begin(); 
   driverX.toff(5);                 // Enables driver in software
   driverX.rms_current(600);        // Set motor RMS current
   driverX.microsteps(16);          // Set microsteps to 1/16th
-  driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  //driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
   driverX.pwm_autoscale(true);     // Needed for stealthChop
 
-  stepperX.moveTo(random(1200,60000));
-
+  driverX.sfilt(1);
 }
 
 #pragma region Stepper
@@ -135,6 +142,41 @@ void stallDetect(uint32_t ms)  {
     
     }
 
+    
+  }
+}
+
+void debugOutput() {
+
+  static uint32_t last_time=0;
+
+  if((millis()-last_time) > 100) { //run every 0.1s
+    last_time = millis();
+
+    DRV_STATUS_t drv_status{0};
+    drv_status.sr = driverX.DRV_STATUS();
+    
+    
+    
+    if (true) {
+      Serial.print(driverX.TSTEP());
+      Serial.print(" ");
+      Serial.print(drv_status.sg_result, DEC);
+      Serial.print(" ");
+      Serial.print(driverX.cs2rms(drv_status.cs_actual), DEC);
+      Serial.print(" ");
+      Serial.print(driverX.IOIN(), BIN);
+      Serial.print(" ");
+      Serial.print(driverX.sfilt());
+      Serial.print(" ");
+      Serial.println(stepperX.distanceToGo());
+
+
+
+      //Change speed of Motor (keleinerse zahl = schneller )
+    
+
+    }
     
   }
 }
@@ -1172,20 +1214,21 @@ void loop()
 {
   //OSCMsgReceive();
   
-  Serial.println(stepperX.distanceToGo());
+  
   if (stepperX.distanceToGo() == 0)
   {
 
-      
+      stepperX.moveTo(random(2000,30000));
 
       stepperX.setMaxSpeed(10000);
 
-      stepperX.setAcceleration(700);
+      stepperX.setAcceleration(500);
 
       Serial.println("Random");
 
   }
   stepperX.run();
+  debugOutput();
 
   
 }
