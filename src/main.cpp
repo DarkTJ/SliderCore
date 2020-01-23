@@ -29,22 +29,22 @@ OSCErrorCode error;
 // Stepper setup
 
 
-#define EN_PINX          23   // Enable Slider Driver
+#define EN_PINX          33   // Enable Slider Driver
 #define EN_PINY          22   // Enable Pan Driver
 #define EN_PINZ          21   // Enable  Tilt Driver
 #define CS_PINX          15   // Chip select X Achse (Slider)
 #define CS_PINY          2    // Chip select Y Achse (Pan)
 #define CS_PINZ          4    // Chip select Z Achse (Tilt)
 
-#define SW_MOSI          5    // Software Master Out Slave In (MOSI)
-#define SW_MISO          17   // Software Master In Slave Out (MISO)
-#define SW_SCK           16   // Software Slave Clock (SCK)
+#define SW_MOSI          13   // Software Master Out Slave In (MOSI)
+#define SW_MISO          12   // Software Master In Slave Out (MISO)
+#define SW_SCK           23   // Software Slave Clock (SCK)
 
-#define STEPX            32
-#define DIRX             33
+#define STEPX            26
+#define DIRX             25
 
-#define STEPY            25
-#define DIRY             26
+#define STEPY            5
+#define DIRY             18
 
 #define STEPZ            27
 #define DIRZ             14
@@ -74,7 +74,14 @@ void setup()
   pinMode(STEPX, OUTPUT);
   pinMode(DIRX, OUTPUT);
   digitalWrite(EN_PINX, LOW);      // Enable driver in hardware
-
+  pinMode(EN_PINY, OUTPUT);
+  pinMode(STEPY, OUTPUT);
+  pinMode(DIRY, OUTPUT);
+  digitalWrite(EN_PINY, LOW);      // Enable driver in hardware
+  pinMode(EN_PINZ, OUTPUT);
+  pinMode(STEPZ, OUTPUT);
+  pinMode(DIRZ, OUTPUT);
+  digitalWrite(EN_PINZ, LOW);      // Enable driver in hardware
 
   // Server starten + Feedback
   Serial.println("Configuring access point...");
@@ -90,27 +97,28 @@ void setup()
   Serial.print("Local port: ");
   Serial.println(localPort);
 
+ delay(2500);
 
  // driverStartup (SPI sollte bis dahin funktionieren)
   driverX.begin(); 
   driverX.toff(5);                 // Enables driver in software
-  driverX.rms_current(600);        // Set motor RMS current
+  driverX.rms_current(1000);        // Set motor RMS current
   driverX.microsteps(16);          // Set microsteps to 1/16th
-  //driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
   driverX.pwm_autoscale(true);     // Needed for stealthChop
 
   driverY.begin(); 
   driverY.toff(5);                 // Enables driver in software
   driverY.rms_current(600);        // Set motor RMS current
   driverY.microsteps(16);          // Set microsteps to 1/16th
-  //driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  driverY.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
   driverY.pwm_autoscale(true);     // Needed for stealthChop
 
   driverZ.begin(); 
   driverZ.toff(5);                 // Enables driver in software
   driverZ.rms_current(600);        // Set motor RMS current
   driverZ.microsteps(16);          // Set microsteps to 1/16th
-  //driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  driverZ.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
   driverZ.pwm_autoscale(true);     // Needed for stealthChop
 
 
@@ -120,13 +128,19 @@ void setup()
 
 
 
-  delay(5000);
+  delay(2500);
 
 
 
   MaxSliderPosition = 60000;
-  MaxTiltkopf = 60000;
-  MaxPankopf = 60000;
+  MaxTiltkopf = 30000;
+  MaxPankopf = 15000;
+        stepperX.setMaxSpeed(50000);
+      stepperX.setAcceleration(2500);
+            stepperY.setMaxSpeed(50000);
+      stepperY.setAcceleration(2500);
+            stepperZ.setMaxSpeed(50000);
+      stepperZ.setAcceleration(2500);
 }
 
 #pragma region Stepper
@@ -306,7 +320,7 @@ void Reverse(OSCMessage &msg, int addrOffset)
 void SliderBewegung(OSCMessage &msg, int addrOffset)
 { // Slider Position Modus 1
 
-  SliderPosition = MaxSliderPosition*msg.getFloat(0);
+  stepperX.moveTo(MaxSliderPosition*msg.getFloat(0));
   Serial.print("Sliderposition = : "); //Hier einfügen, was gemacht werden soll
   Serial.println(SliderPosition);
 }
@@ -314,15 +328,7 @@ void SliderBewegung(OSCMessage &msg, int addrOffset)
 void Pankopf_Bewegung(OSCMessage &msg, int addrOffset)
 { //Pankopf1
 
-  Pankopf = msg.getFloat(0);
-  if (modus == 1)
-  {
-    SendOSCMessage("/modus_1/pan_position",0.55f);
-  }
-  if (modus == 0)
-  {
-    SendOSCMessage("/modus_0/pan_position",0.55f);
-  }
+  stepperY.move(10*msg.getFloat(0));
 
   Serial.print("Pankopf = : ");
   Serial.println(Pankopf);
@@ -332,6 +338,8 @@ void Tiltkopf_Bewegung(OSCMessage &msg, int addrOffset)
 { // Slider Position Modus 1
 
   Tiltkopf = msg.getFloat(0);
+
+  stepperZ.moveTo(MaxTiltkopf*msg.getFloat(0));
   //OSCMessage msgOUT("/modus_1/slider_fader");    //Hier Knopf Bezeichnung für Ziel einfügen
 
   Serial.print("Tiltkopf = : "); //Hier einfügen, was gemacht werden soll
@@ -462,9 +470,9 @@ void ViewKeyFrame1(OSCMessage &msg, int addrOffset)
     Serial.println(view);
     if (view == 1)
     {
-      SliderPosition = KeyFramePosition_0_1;
-      Pankopf = KeyFramePan_0_1;
-      Tiltkopf = KeyFrameTilt_0_1;
+      stepperX.moveTo(KeyFramePosition_0_1);
+      stepperY.moveTo(KeyFramePan_0_1);
+      stepperZ.moveTo(KeyFrameTilt_0_1);
     }
   }
 
@@ -1113,18 +1121,21 @@ void Rotation(OSCMessage &msg, int addrOffset){
 
 void SliderEnable(OSCMessage &msg, int addrOffset){
     slider_enable = msg.getFloat(0);
+    digitalWrite(EN_PINX,slider_enable);
     Serial.print("Slider Enable?= : ");
     Serial.println(slider_enable);
 }
 
 void PanEnable(OSCMessage &msg, int addrOffset){
     pan_enable = msg.getFloat(0);
+    digitalWrite(EN_PINY,pan_enable);
     Serial.print("Pan Enable?= : ");
     Serial.println(pan_enable);
 }
 
 void TiltEnable(OSCMessage &msg, int addrOffset){
     tilt_enable = msg.getFloat(0);
+    digitalWrite(EN_PINZ,tilt_enable);
     Serial.print("Tilt Enable?= : ");
     Serial.println(tilt_enable);
 }
@@ -1245,28 +1256,8 @@ void loop()
 {
   OSCMsgReceive();
   
+  //randomMovement();
   
-  if (stepperX.distanceToGo() == 0)
-  {
-      stepperX.moveTo(random(2000,30000));
-      stepperX.setMaxSpeed(10000);
-      stepperX.setAcceleration(500);
-      Serial.println("Random");
-  }
-  if (stepperY.distanceToGo() == 0)
-  {
-      stepperY.moveTo(random(2000,30000));
-      stepperY.setMaxSpeed(10000);
-      stepperY.setAcceleration(500);
-      Serial.println("Random");
-  }
-  if (stepperZ.distanceToGo() == 0)
-  {
-      stepperZ.moveTo(random(2000,30000));
-      stepperZ.setMaxSpeed(10000);
-      stepperZ.setAcceleration(500);
-      Serial.println("Random");
-  }
 
 
 
@@ -1275,6 +1266,8 @@ void loop()
   
     updateUI();
     last_time = millis();
+
+    debugOutput();
   }
 
   if (go == 1) {
@@ -1287,7 +1280,33 @@ void loop()
   }
   
   
-  //debugOutput();
+  
 
   
+}
+
+
+void randomMovement() {
+
+  if (stepperX.distanceToGo() == 0)
+  {
+      stepperX.moveTo(random(500,MaxSliderPosition));
+      stepperX.setMaxSpeed(50000);
+      stepperX.setAcceleration(2500);
+      Serial.println("Random");
+  }
+  if (stepperY.distanceToGo() == 0)
+  {
+      stepperY.moveTo(random(500,MaxPankopf));
+      stepperY.setMaxSpeed(50000);
+      stepperY.setAcceleration(2500);
+      Serial.println("Random");
+  }
+  if (stepperZ.distanceToGo() == 0)
+  {
+      stepperZ.moveTo(random(500,MaxTiltkopf));
+      stepperZ.setMaxSpeed(50000);
+      stepperZ.setAcceleration(2500);
+      Serial.println("Random");
+  }
 }
