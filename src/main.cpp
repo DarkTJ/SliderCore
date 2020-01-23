@@ -11,7 +11,7 @@
 
 #include <Variablen.h>
 
-const char *ssid = "SliderMasterVersion";         // Name des Netzwerks
+const char *ssid = "SliderMasterVersion2";         // Name des Netzwerks
 const char *password = "slideslide"; // Passwort des Netzwerks
 
 WiFiServer server(80); // Server Instanz -> ESP als Access Point
@@ -24,23 +24,30 @@ const unsigned int localPort = 8888;   // Incoming-Ports des Hosts für ankommen
 OSCErrorCode error;
 
 
+
 ////////////////////////////////////////////////////////////////////////////7
 // Stepper setup
 
 
-#define EN_PINX           23 // Enable Slider Driver
-//#define EN_PINY           333 // Enable Pan Driver
-//#define EN_PINZ           3333 // Enable  Tilt Driver
-#define CS_PINX         15 // Chip select X Achse (Slider)
-//#define CS_PINY          100 // Chip select Y Achse (Pan)
-//#define CS_PINZ          200 // Chip select Z Achse (Tilt)
+#define EN_PINX          23   // Enable Slider Driver
+#define EN_PINY          22   // Enable Pan Driver
+#define EN_PINZ          21   // Enable  Tilt Driver
+#define CS_PINX          15   // Chip select X Achse (Slider)
+#define CS_PINY          2    // Chip select Y Achse (Pan)
+#define CS_PINZ          4    // Chip select Z Achse (Tilt)
 
-#define SW_MOSI          5 // Software Master Out Slave In (MOSI)
-#define SW_MISO          17 // Software Master In Slave Out (MISO)
-#define SW_SCK           16 // Software Slave Clock (SCK)
+#define SW_MOSI          5    // Software Master Out Slave In (MOSI)
+#define SW_MISO          17   // Software Master In Slave Out (MISO)
+#define SW_SCK           16   // Software Slave Clock (SCK)
 
-#define STEPX            22
-#define DIRX             21
+#define STEPX            32
+#define DIRX             33
+
+#define STEPY            25
+#define DIRY             26
+
+#define STEPZ            27
+#define DIRZ             14
 
 
 using namespace TMC2130_n;
@@ -52,12 +59,12 @@ using namespace TMC2130_n;
 
 //TMC2130Stepper driverX(CS_PINX, R_SENSE);                           // Hardware SPI
 TMC2130Stepper driverX(CS_PINX, R_SENSE, SW_MOSI, SW_MISO, SW_SCK); // Software SPI
-//TMC2130Stepper driverY(CS_PINY, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
-//TMC2130Stepper driverZ(CS_PINZ, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
+TMC2130Stepper driverY(CS_PINY, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
+TMC2130Stepper driverZ(CS_PINZ, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
 
 AccelStepper stepperX(AccelStepper::DRIVER,STEPX,DIRX);  //Slider
-//AccelStepper stepperY(AccelStepper::DRIVER,200,300);  //Pan
-//AccelStepper stepperZ(AccelStepper::DRIVER,400,500);  //Tilt
+AccelStepper stepperY(AccelStepper::DRIVER,STEPY,DIRY);  //Pan
+AccelStepper stepperZ(AccelStepper::DRIVER,STEPZ,DIRZ);  //Tilt
 
 void setup()
 {
@@ -83,6 +90,8 @@ void setup()
   Serial.print("Local port: ");
   Serial.println(localPort);
 
+
+ // driverStartup (SPI sollte bis dahin funktionieren)
   driverX.begin(); 
   driverX.toff(5);                 // Enables driver in software
   driverX.rms_current(600);        // Set motor RMS current
@@ -90,7 +99,34 @@ void setup()
   //driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
   driverX.pwm_autoscale(true);     // Needed for stealthChop
 
-  driverX.sfilt(1);
+  driverY.begin(); 
+  driverY.toff(5);                 // Enables driver in software
+  driverY.rms_current(600);        // Set motor RMS current
+  driverY.microsteps(16);          // Set microsteps to 1/16th
+  //driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  driverY.pwm_autoscale(true);     // Needed for stealthChop
+
+  driverZ.begin(); 
+  driverZ.toff(5);                 // Enables driver in software
+  driverZ.rms_current(600);        // Set motor RMS current
+  driverZ.microsteps(16);          // Set microsteps to 1/16th
+  //driverX.en_pwm_mode(true);       // Toggle stealthChop on TMC2130/2160/5130/5160
+  driverZ.pwm_autoscale(true);     // Needed for stealthChop
+
+
+
+
+
+
+
+
+  delay(5000);
+
+
+
+  MaxSliderPosition = 60000;
+  MaxTiltkopf = 60000;
+  MaxPankopf = 60000;
 }
 
 #pragma region Stepper
@@ -190,7 +226,7 @@ void debugOutput() {
 
 void SendOSCMessage(OSCMessage msgOUT, float wert){
     msgOUT.add(wert);
-    Serial.println("Send Float");
+//    Serial.println("Send Float");
     Udp.beginPacket(Udp.remoteIP(), destPort);    //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
     msgOUT.send(Udp); // send the bytes
     Udp.endPacket(); // mark the end of the OSC Packet
@@ -208,7 +244,7 @@ void SendOSCMessage(OSCMessage msgOUT, String wert){
 }
 void SendOSCMessage(OSCMessage msgOUT, int wert){
     msgOUT.add(wert);
-    Serial.println("Send Int");
+//    Serial.println("Send Int");
     Udp.beginPacket(Udp.remoteIP(), destPort);    //Sendet den Wert der am Encoder eingestellt wurde an den Anzeiger für die Position
     msgOUT.send(Udp); // send the bytes
     Udp.endPacket(); // mark the end of the OSC Packet
@@ -243,15 +279,16 @@ void Modus3(OSCMessage &msg, int addrOffset)
 
 void start(OSCMessage &msg, int addrOffset)
 { // Slider Position Modus 1
-  go = msg.getFloat(0);
+  bool go_ = msg.getFloat(0);
 
-  if (go == 1) {
+  if (go_ == 1) {
     goModus = modus;
-    SendOSCMessage("/modus_0/start_label","Stop");
-    SendOSCMessage("modus_0/slider_fader",0.3f);
+    go = 1;
+    SendOSCMessage("/modus_0/start_label/color","red");
     //stepperStart();
   } else {
-    SendOSCMessage("/modus_0/start_label","Start");
+    go = 0;
+    SendOSCMessage("/modus_0/start_label/color","green");
     //stepperStop();
   }
 
@@ -269,7 +306,7 @@ void Reverse(OSCMessage &msg, int addrOffset)
 void SliderBewegung(OSCMessage &msg, int addrOffset)
 { // Slider Position Modus 1
 
-  SliderPosition = msg.getFloat(0);
+  SliderPosition = MaxSliderPosition*msg.getFloat(0);
   Serial.print("Sliderposition = : "); //Hier einfügen, was gemacht werden soll
   Serial.println(SliderPosition);
 }
@@ -897,14 +934,14 @@ void DauerKeyFrame3(OSCMessage &msg, int addrOffset)
     KeyFrameDauer_1_3 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 1 3?= : ");
     Serial.println(KeyFrameDauer_1_3);
-    SendOSCMessage("/modus_1/dauer_anzeige_3",String(KeyFrameDauer_1_3));  
+    SendOSCMessage("/modus_1/dauer_anzeige_3",int(KeyFrameDauer_1_3));  
   }
   if (modus == 2)
   {
     KeyFrameDauer_2_3 = msg.getFloat(0);
     Serial.print("KeyFrameDauer 2 3?= : ");
     Serial.println(KeyFrameDauer_2_3);
-    SendOSCMessage("/modus_2/dauer_anzeige_3",String(KeyFrameDauer_2_3));  
+    SendOSCMessage("/modus_2/dauer_anzeige_3",int(KeyFrameDauer_2_3));  
   }
   }
 
@@ -1121,23 +1158,12 @@ void OSCMsgReceive()
 
 
 
-      msgIN.route("/modus_0/start", start); //Startknöpfe
-      msgIN.route("/modus_1/start", start);
-      msgIN.route("/modus_2/start", start);
+      msgIN.route("/start", start); //Startknöpfe
 
-       msgIN.route("/modus_0/slider_fader", SliderBewegung); //modus 0 ruft gleiche Funktionen auf wie modus 1
-    msgIN.route("/modus_0/pan_encoder", Pankopf_Bewegung);
-      msgIN.route("/modus_0/tilt_position", Tiltkopf_Bewegung);
+       msgIN.route("/slider_fader", SliderBewegung); //modus 0 ruft gleiche Funktionen auf wie modus 1
+    msgIN.route("/pan_encoder", Pankopf_Bewegung);
+      msgIN.route("/tilt_position", Tiltkopf_Bewegung);
 
-      msgIN.route("/modus_1/slider_fader", SliderBewegung); //Positionseinstellungen
-      msgIN.route("/modus_1/pan_encoder", Pankopf_Bewegung);
-      msgIN.route("/modus_1/tilt_position", Tiltkopf_Bewegung);
-
-      msgIN.route("/modus_2/slider_fader", SliderBewegung); //Positionseinstellungen
-    msgIN.route("/modus_2/pan_encoder", Pankopf_Bewegung);
-          msgIN.route("/modus_2/tilt_position", Tiltkopf_Bewegung);
-
-      
 
       //Modus_0
       msgIN.route("/modus_0/keyframe_1", Keyframe1); //KeyFrame 1, Modus 0
@@ -1191,8 +1217,6 @@ void OSCMsgReceive()
       msgIN.route("/modus_2/View_3", ViewKeyFrame3);
 
       //Modus_3
-      msgIN.route("/modus_3/slider_fader", SliderBewegung);
-      msgIN.route("/modus_3/start", start);
       msgIN.route("/modus_3/pan_tilt", Rotation);
 
 
@@ -1209,26 +1233,61 @@ void OSCMsgReceive()
 
 #pragma endregion
 
+void updateUI() {
+
+  SendOSCMessage("/slider_fader",float(float(SliderPosition)/float(MaxSliderPosition)));
+  SendOSCMessage("/pan_position",float(Pankopf)/float(MaxPankopf));
+  SendOSCMessage("/tilt_position",float(Tiltkopf)/float(MaxPankopf));
+
+}
 
 void loop()
 {
-  //OSCMsgReceive();
+  OSCMsgReceive();
   
   
   if (stepperX.distanceToGo() == 0)
   {
-
       stepperX.moveTo(random(2000,30000));
-
       stepperX.setMaxSpeed(10000);
-
       stepperX.setAcceleration(500);
-
       Serial.println("Random");
-
   }
-  stepperX.run();
-  debugOutput();
+  if (stepperY.distanceToGo() == 0)
+  {
+      stepperY.moveTo(random(2000,30000));
+      stepperY.setMaxSpeed(10000);
+      stepperY.setAcceleration(500);
+      Serial.println("Random");
+  }
+  if (stepperZ.distanceToGo() == 0)
+  {
+      stepperZ.moveTo(random(2000,30000));
+      stepperZ.setMaxSpeed(10000);
+      stepperZ.setAcceleration(500);
+      Serial.println("Random");
+  }
+
+
+
+  static uint32_t last_time;
+  if (millis() - last_time >500) {    //only run every half second
+  
+    updateUI();
+    last_time = millis();
+  }
+
+  if (go == 1) {
+    stepperX.run();
+    stepperY.run();
+    stepperZ.run();
+    SliderPosition = stepperX.currentPosition();
+    Tiltkopf = stepperZ.currentPosition();
+    Pankopf = stepperY.currentPosition();
+  }
+  
+  
+  //debugOutput();
 
   
 }
