@@ -25,6 +25,10 @@ bool KeyFrame_2_3;
 
 bool KeyFrame_1_4; //Keyframes 4
 
+// Aktuelle Status jedes Modi
+int NextKeyFrame[3]; // für jeden Modi eine Position in der Liste
+
+
 //Variablen für KeyFrame Position
 float KeyFramePosition_0_1;
 float KeyFramePosition_1_1;
@@ -116,27 +120,18 @@ float sequenzdauer2;
 float intervall1;
 float intervall2;
 
-//Modus 3 Einlesen
-float rotation;
-
+int modus; //Nummer des aktuellen Modi in UI   
 bool go; //ist der Slider an oder ist der Slider aus?
 int goModus;    // In welchem Modus läuft der Slider gerade;
+
+
 bool reversemsg; // Modus 1 reverse an oder aus 
 
-float Beschleunigung; //Beschleunigungsart zwischen linear und smooth
-
 int Bildzahl;   //Anzahl der Bilder zwischen zwei Keyframes im Modus2
-int Wartedauer; //Zeit zwischen den Bildern
 
-int modus; //Nummer des aktuellen Modi in UI    
-int modusSlider; //     Nummer des aktuellen Modi des Sliders
 
 int bilder; //Anzahl der Bilder
 
-//Slider
-// float SliderPosition; WECLCHER WAR DAS
-float SliderPan;
-float SliderTilt;
 
 //Settings
 bool pan_enable;
