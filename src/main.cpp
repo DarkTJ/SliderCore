@@ -229,6 +229,31 @@ void gotoKeyframe(int Keyframe) {
     }
 
   } else if (goModus == 1) {
+    if (Keyframe == 0) {
+    if (KeyFrame_1_1 == 1) {
+        //langsamsts Movement berechnen
+        stepperX.setAcceleration(KeyFrameBeschleunigung_1_1);
+        stepperX.setMaxSpeed(KeyFrameDauer_1_1);
+
+        stepperY.setAcceleration(KeyFrameBeschleunigung_1_1);
+        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1,abs(KeyFramePosition_1_1-KeyFramePosition_1_2),abs(KeyFramePan_1_1-KeyFramePan_1_2));
+
+        stepperZ.setAcceleration(KeyFrameBeschleunigung_1_1);
+        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_1_1, StandartAcc,abs(KeyFramePosition_1_1-KeyFramePosition_1_2),abs(KeyFrameTilt_1_1-KeyFrameTilt_1_2));
+
+
+        stepperX.moveTo(KeyFramePosition_0_1);
+        stepperY.moveTo(KeyFramePan_0_1);
+        stepperZ.moveTo(KeyFrameTilt_0_1);
+        
+        pause_time = KeyFramePause_0_1;
+      }else {
+        gotoKeyframe(Keyframe+1);
+      }
+      
+    
+    
+    }
 
   } else if (goModus == 2) {
 
