@@ -129,6 +129,11 @@ void setup()
   MaxSliderPosition = 60000;
   MaxPankopf = 15000;
   MaxTiltkopf = 30000;
+  KeyFrame_0_1 = true;
+  KeyFrame_0_2 = true;
+  KeyFramePosition_0_2 = 50000;
+  KeyFramePosition_0_1 = 10000;
+
   stepperX.setMaxSpeed(50000);
   stepperX.setAcceleration(2500);
   stepperY.setMaxSpeed(50000);
@@ -146,9 +151,21 @@ void SendOSCMessage(OSCMessage msgOUT, char* wert);
 float zeitdesMoves(float MaxSpeed, float Acc,float distance) {
   float gesZeit;
   float timeAcc = MaxSpeed/Acc;
+  Serial.println(timeAcc);
   float distAcc = 0.5f*Acc*(timeAcc*timeAcc);
+  Serial.println(distAcc);
   float timeMaxSpeed =  (distance-2*distAcc)/MaxSpeed;
+  if (timeMaxSpeed < 0) {
+    Serial.println("Error Geschwindigkeitsberechnung");
+  }
+  Serial.println(timeMaxSpeed);
   gesZeit = 2*timeAcc + timeMaxSpeed;
+  Serial.println(gesZeit);
+  return gesZeit;
+}
+float calcSpeed(float MaxSpeed,float Acc, float distancetoMatch, float distancetoDo) {
+
+  
 }
 
 void gotoKeyframe(int Keyframe) {
@@ -157,10 +174,10 @@ void gotoKeyframe(int Keyframe) {
     if (Keyframe == 0) {
       if (KeyFrame_0_1 == 1) {
         //langsamsts Movement berechnen
-        stepperX.setAcceleration(200);
-        stepperX.setMaxSpeed(200);
+        stepperX.setAcceleration(StandartAcc);
+        stepperX.setMaxSpeed(KeyFrameDauer_0_1);
 
-        stepperY.setAcceleration(299);
+        stepperY.setAcceleration(StandartAcc);
         stepperY.setMaxSpeed(299);
 
         stepperZ.setAcceleration(299);
@@ -171,6 +188,7 @@ void gotoKeyframe(int Keyframe) {
         stepperY.moveTo(KeyFramePan_0_1);
         stepperZ.moveTo(KeyFrameTilt_0_1);
         
+        pause_time = KeyFramePause_0_1;
       }else {
         gotoKeyframe(Keyframe+1);
       }
@@ -392,7 +410,7 @@ void start(OSCMessage &msg, int addrOffset)
     SendOSCMessage("/start/color", "green");
     SendOSCMessage("/start", 0);
 
-    if (goModus == 3) {
+    if (goModus == 3 || goModus == -1) {
       stepperX.stop();
       stepperY.stop();
       stepperZ.stop();
@@ -456,10 +474,10 @@ void Rotation(OSCMessage &msg, int addrOffset)
   else if (rotationY > 0.55f && goModus == 3) {
     rotationY = rotationY - 0.5f;
     
-    stepperY.move(400*rotationY);
+    stepperY.move(800*rotationY);
   }else if (rotationY < 0.45f && goModus == 3)  {
     rotationY = 0.5f - rotationY;
-    stepperY.move(-400*rotationY);
+    stepperY.move(-800*rotationY);
   }
 
   if (rotationZ > 0.45f && rotationZ < 0.55f && goModus == 3) {
@@ -468,10 +486,10 @@ void Rotation(OSCMessage &msg, int addrOffset)
   else if (rotationZ > 0.55f && goModus == 3) {
     rotationZ = rotationZ - 0.5f;
     
-    stepperZ.move(400*rotationZ);
+    stepperZ.move(800*rotationZ);
   }else if (rotationZ < 0.45f && goModus == 3)  {
     rotationZ = 0.5f - rotationZ;
-    stepperZ.move(-400*rotationZ);
+    stepperZ.move(-800*rotationZ);
   }
 
 
@@ -491,10 +509,10 @@ void Bewegung(OSCMessage &msg, int addrOffset) {
   else if (sliderpos > 0.6f && goModus == 3) {
     sliderpos = sliderpos - 0.5f;
     
-    stepperX.move(400*sliderpos);
+    stepperX.move(1300*sliderpos);
   }else if (sliderpos < 0.4f && goModus == 3)  {
     sliderpos = 0.5f - sliderpos;
-    stepperX.move(-400*sliderpos);
+    stepperX.move(-1300*sliderpos);
   }
 
   Serial.print("Moving to ?= : ");
@@ -693,37 +711,30 @@ void BeschleunigungKeyFrame1(OSCMessage &msg, int addrOffset)
     Serial.print("KeyFrameBeschleunigung_1_1?= : ");
     Serial.println(KeyFrameBeschleunigung_1_1);
   }
-
-  if (modus == 2)
-  {
-    KeyFrameBeschleunigung_2_1 = StandartAcc*msg.getFloat(0);
-    Serial.print("KeyFrameBeschleunigung_2_1?= : ");
-    Serial.println(KeyFrameBeschleunigung_2_1);
-  }
 }
 
 void DauerKeyFrame1(OSCMessage &msg, int addrOffset)
 { //Geschwindigkeit des 1. KeyFrames
   if (modus == 0)
   {
-    KeyFrameDauer_0_1 = msg.getFloat(0);
+    KeyFrameDauer_0_1 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 0 1?= : ");
     Serial.println(KeyFrameDauer_0_1);
-    SendOSCMessage("/modus_0/dauer_anzeige_k1", KeyFrameDauer_0_1);
+    SendOSCMessage("/modus_0/dauer_anzeige_k1", zeitdesMoves(KeyFrameDauer_0_1,StandartAcc*0.5,abs(KeyFramePosition_0_1-KeyFramePosition_0_2)));
   }
   if (modus == 1)
   {
-    KeyFrameDauer_1_1 = msg.getFloat(0);
+    KeyFrameDauer_1_1 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 1 1?= : ");
     Serial.println(KeyFrameDauer_1_1);
-    SendOSCMessage("/modus_1/dauer_anzeige_1", KeyFrameDauer_1_1);
+    SendOSCMessage("/modus_1/dauer_anzeige_1", zeitdesMoves(KeyFrameDauer_1_1,KeyFrameBeschleunigung_1_1,abs(KeyFramePosition_1_1-KeyFramePosition_1_2)));
   }
   if (modus == 2)
   {
-    KeyFrameDauer_2_1 = msg.getFloat(0);
+    KeyFrameDauer_2_1 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 2 1?= : ");
     Serial.println(KeyFrameDauer_2_1);
-    SendOSCMessage("/modus_2/dauer_anzeige_1", KeyFrameDauer_2_1);
+    SendOSCMessage("/modus_2/dauer_anzeige_1", zeitdesMoves(KeyFrameDauer_2_1,KeyFrameBeschleunigung_2_1,abs(KeyFramePosition_2_1-KeyFramePosition_2_2)));
   }
 }
 
@@ -731,21 +742,21 @@ void PauseKeyFrame1(OSCMessage &msg, int addrOffset)
 { //Pause des 1. KeyFrames
   if (modus == 0)
   {
-    KeyFramePause_0_1 = msg.getFloat(0);
+    KeyFramePause_0_1 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 0 1?= : ");
     Serial.println(KeyFramePause_0_1);
     SendOSCMessage("/modus_0/pause_anzeige_k2", KeyFrameDauer_0_1);
   }
   if (modus == 1)
   {
-    KeyFramePause_1_1 = msg.getFloat(0);
+    KeyFramePause_1_1 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 1 1?= : ");
     Serial.println(KeyFramePause_1_1);
     SendOSCMessage("/modus_1/pause_anzeige_2", KeyFrameDauer_1_1);
   }
   if (modus == 2)
   {
-    KeyFramePause_2_1 = msg.getFloat(0);
+    KeyFramePause_2_1 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 2 1?= : ");
     Serial.println(KeyFramePause_2_1);
     SendOSCMessage("/modus_2/pause_anzeige_2", KeyFrameDauer_2_1);
@@ -940,41 +951,35 @@ void BeschleunigungKeyFrame2(OSCMessage &msg, int addrOffset)
 
   if (modus == 1)
   {
-    KeyFrameBeschleunigung_1_2 = msg.getFloat(0);
+    KeyFrameBeschleunigung_1_2 = StandartAcc*msg.getFloat(0);
     Serial.print("KeyFrameBeschleunigung_1_2?= : ");
     Serial.println(KeyFrameBeschleunigung_1_2);
   }
 
-  if (modus == 2)
-  {
-    KeyFrameBeschleunigung_2_2 = StandartAcc*msg.getFloat(0);
-    Serial.print("KeyFrameBeschleunigung_2_2?= : ");
-    Serial.println(KeyFrameBeschleunigung_2_2);
-  }
 }
 
 void DauerKeyFrame2(OSCMessage &msg, int addrOffset)
 { //Geschwindigkeit des 2. KeyFrames
   if (modus == 0)
   {
-    KeyFrameDauer_0_2 = msg.getFloat(0);
+    KeyFrameDauer_0_2 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 0 2?= : ");
     Serial.println(KeyFrameDauer_0_2);
-    SendOSCMessage("/modus_0/dauer_anzeige_k2", KeyFrameDauer_0_2);
+    SendOSCMessage("/modus_0/dauer_anzeige_k2", zeitdesMoves(KeyFrameDauer_0_2,StandartAcc*0.5,abs(KeyFramePosition_0_2-KeyFramePosition_0_1)));
   }
   if (modus == 1)
   {
-    KeyFrameDauer_1_2 = msg.getFloat(0);
+    KeyFrameDauer_1_2 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 1 2?= : ");
     Serial.println(KeyFrameDauer_1_2);
-    SendOSCMessage("/modus_1/dauer_anzeige_2", KeyFrameDauer_1_2);
+    SendOSCMessage("/modus_1/dauer_anzeige_2", zeitdesMoves(KeyFrameDauer_1_2,KeyFrameBeschleunigung_1_2,abs(KeyFramePosition_1_2-KeyFramePosition_1_3)));
   }
   if (modus == 2)
   {
-    KeyFrameDauer_2_2 = msg.getFloat(0);
+    KeyFrameDauer_2_2 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 2 2?= : ");
     Serial.println(KeyFrameDauer_2_2);
-    SendOSCMessage("/modus_2/dauer_anzeige_2", KeyFrameDauer_2_2);
+    SendOSCMessage("/modus_2/dauer_anzeige_2", zeitdesMoves(KeyFrameDauer_2_2,KeyFrameBeschleunigung_2_2,abs(KeyFramePosition_2_2-KeyFramePosition_2_3)));
   }
 }
 
@@ -982,21 +987,21 @@ void PauseKeyFrame2(OSCMessage &msg, int addrOffset)
 { //Pause des 2. KeyFrames
   if (modus == 0)
   {
-    KeyFramePause_0_2 = msg.getFloat(0);
+    KeyFramePause_0_2 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 0 2?= : ");
     Serial.println(KeyFramePause_0_2);
     SendOSCMessage("/modus_0/pause_anzeige_k2", KeyFramePause_0_2);
   }
   if (modus == 1)
   {
-    KeyFramePause_1_2 = msg.getFloat(0);
+    KeyFramePause_1_2 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 1 2?= : ");
     Serial.println(KeyFramePause_1_2);
     SendOSCMessage("/modus_1/pause_anzeige_2", KeyFramePause_1_2);
   }
   if (modus == 2)
   {
-    KeyFramePause_2_2 = msg.getFloat(0);
+    KeyFramePause_2_2 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 2 2?= : ");
     Serial.println(KeyFramePause_2_2);
     SendOSCMessage("/modus_2/pause_anzeige_2", KeyFramePause_2_2);
@@ -1131,30 +1136,23 @@ void BeschleunigungKeyFrame3(OSCMessage &msg, int addrOffset)
     Serial.print("KeyFrameBeschleunigung_1_3?= : ");
     Serial.println(KeyFrameBeschleunigung_1_3);
   }
-
-  if (modus == 2)
-  {
-    KeyFrameBeschleunigung_2_3 = StandartAcc*msg.getFloat(0);
-    Serial.print("KeyFrameBeschleunigung_2_3?= : ");
-    Serial.println(KeyFrameBeschleunigung_2_3);
-  }
 }
 
 void DauerKeyFrame3(OSCMessage &msg, int addrOffset)
 { //Geschwindigkeit des 3. KeyFrames
   if (modus == 1)
   {
-    KeyFrameDauer_1_3 = msg.getFloat(0);
+    KeyFrameDauer_1_3 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 1 3?= : ");
     Serial.println(KeyFrameDauer_1_3);
-    SendOSCMessage("/modus_1/dauer_anzeige_3", int(KeyFrameDauer_1_3));
+    SendOSCMessage("/modus_1/dauer_anzeige_3", zeitdesMoves(KeyFrameDauer_1_3,KeyFrameBeschleunigung_1_3,abs(KeyFramePosition_1_3-KeyFramePosition_1_4)));
   }
   if (modus == 2)
   {
-    KeyFrameDauer_2_3 = msg.getFloat(0);
+    KeyFrameDauer_2_3 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 2 3?= : ");
     Serial.println(KeyFrameDauer_2_3);
-    SendOSCMessage("/modus_2/dauer_anzeige_3", int(KeyFrameDauer_2_3));
+    SendOSCMessage("/modus_2/dauer_anzeige_3", zeitdesMoves(KeyFrameDauer_2_3,KeyFrameBeschleunigung_2_3,abs(KeyFramePosition_2_3-KeyFramePosition_2_1)));
   }
 }
 
@@ -1162,7 +1160,7 @@ void PauseKeyFrame3(OSCMessage &msg, int addrOffset)
 { //Pause des 3. KeyFrames
   if (modus == 1)
   {
-    KeyFramePause_1_3 = msg.getFloat(0);
+    KeyFramePause_1_3 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 1 3?= : ");
     Serial.println(KeyFramePause_1_3);
     SendOSCMessage("/modus_1/pause_anzeige_3", KeyFramePause_1_3);
@@ -1170,7 +1168,7 @@ void PauseKeyFrame3(OSCMessage &msg, int addrOffset)
 
   if (modus == 2)
   {
-    KeyFramePause_2_3 = msg.getFloat(0);
+    KeyFramePause_2_3 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 2 3?= : ");
     Serial.println(KeyFramePause_2_3);
     SendOSCMessage("/modus_2/pause_anzeige_3", KeyFramePause_2_3);
@@ -1253,7 +1251,7 @@ void DauerKeyFrame4(OSCMessage &msg, int addrOffset)
 { //Geschwindigkeit des 4. KeyFrames
   if (modus == 1)
   {
-    KeyFrameDauer_1_4 = msg.getFloat(0);
+    KeyFrameDauer_1_4 = StandartSpeed*(1.1-msg.getFloat(0));
     Serial.print("KeyFrameDauer 1 4?= : ");
     Serial.println(KeyFrameDauer_1_4);
   }
@@ -1263,7 +1261,7 @@ void PauseKeyFrame4(OSCMessage &msg, int addrOffset)
 { //Pause des 4. KeyFrames
   if (modus == 1)
   {
-    KeyFramePause_1_4 = msg.getFloat(0);
+    KeyFramePause_1_4 = 30*msg.getFloat(0);
     Serial.print("KeyFramePause 1 4?= : ");
     Serial.println(KeyFramePause_1_4);
     SendOSCMessage("/modus_1/pause_anzeige_4", KeyFramePause_1_4);
@@ -1580,10 +1578,21 @@ void loop()
       
 
     }else if (stepperX.distanceToGo() == 0 && stepperY.distanceToGo() == 0 && stepperZ.distanceToGo() == 0 && goModus != 3) {
+      if (pause == 1) {
 
-      Serial.println("next Keyframe");
+        if (millis() > pause_time) {
+          Serial.println("next Keyframe");
 
-      gotoKeyframe(NextKeyFrame[goModus]);
+          gotoKeyframe(NextKeyFrame[goModus]);
+          pause == 0;
+        }
+      }else {
+        pause = 1;
+        pause_time = millis() + pause_time;
+        Serial.println("Pause Start");
+      }
+
+      
 
     }
     

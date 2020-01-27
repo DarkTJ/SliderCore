@@ -74,14 +74,14 @@ float KeyFrameTilt_1_4;
 //Variablen für KeyFrame Beschleunigung
 float KeyFrameBeschleunigung_0_1;
 float KeyFrameBeschleunigung_1_1;
-float KeyFrameBeschleunigung_2_1;
+float KeyFrameBeschleunigung_2_1 = 10000;
 
 float KeyFrameBeschleunigung_0_2;
 float KeyFrameBeschleunigung_1_2;
-float KeyFrameBeschleunigung_2_2;
+float KeyFrameBeschleunigung_2_2 = 10000;
 
 float KeyFrameBeschleunigung_1_3;
-float KeyFrameBeschleunigung_2_3;
+float KeyFrameBeschleunigung_2_3 = 10000;
 
 float KeyFrameBeschleunigung_1_4;
 
@@ -123,7 +123,8 @@ float intervall2;
 int modus; //Nummer des aktuellen Modi in UI   
 bool go; //ist der Slider an oder ist der Slider aus?
 int goModus;    // In welchem Modus läuft der Slider gerade;
-
+bool pause;
+uint16_t pause_time;
 
 bool reversemsg; // Modus 1 reverse an oder aus 
 
