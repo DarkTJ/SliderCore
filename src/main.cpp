@@ -165,6 +165,12 @@ float zeitdesMoves(float MaxSpeed, float Acc,float distance) {
 }
 float calcSpeed(float MaxSpeed,float Acc, float distancetoMatch, float distancetoDo) {
 
+  float timeToMatch = zeitdesMoves(MaxSpeed,Acc,distancetoMatch);
+  float timeAcc = MaxSpeed/Acc
+  float timefullSpeed = timeToMatch-2*timeAcc;
+  float distAcc = 0.5f*Acc*(timeAcc*timeAcc);
+  float speed = (distancetoDo-2*distAcc)/timefullSpeed;
+  return speed;
   
 }
 
@@ -178,10 +184,10 @@ void gotoKeyframe(int Keyframe) {
         stepperX.setMaxSpeed(KeyFrameDauer_0_1);
 
         stepperY.setAcceleration(StandartAcc);
-        stepperY.setMaxSpeed(299);
+        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_0_1, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFramePan_0_1-KeyFramePan_0_2));
 
-        stepperZ.setAcceleration(299);
-        stepperZ.setMaxSpeed(299);
+        stepperZ.setAcceleration(StandartAcc);
+        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_0_1, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFrameTilt_0_1-KeyFrameTilt_0_2));
 
 
         stepperX.moveTo(KeyFramePosition_0_1);
@@ -196,6 +202,21 @@ void gotoKeyframe(int Keyframe) {
 
     }else if (Keyframe == 1){
       if (KeyFrame_0_2 == 1) {
+                stepperX.setAcceleration(StandartAcc);
+        stepperX.setMaxSpeed(KeyFrameDauer_0_2);
+
+        stepperY.setAcceleration(StandartAcc);
+        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_0_2, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFramePan_0_1-KeyFramePan_0_2));
+
+        stepperZ.setAcceleration(StandartAcc);
+        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_0_2, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFrameTilt_0_1-KeyFrameTilt_0_2));
+
+
+        stepperX.moveTo(KeyFramePosition_0_2);
+        stepperY.moveTo(KeyFramePan_0_2);
+        stepperZ.moveTo(KeyFrameTilt_0_2);
+        
+        pause_time = KeyFramePause_0_2;
         
       }else {
         go = 0;
@@ -218,7 +239,8 @@ void gotoKeyframe(int Keyframe) {
 
 void sliderAusmessen()
 {
-  modus = -2;           // auf Nullposition fahren
+  goModus = -3;           // auf Nullposition fahren
+  go = 1;
   driverX.en_pwm_mode(false); // disable stealthcop für stallguard
   driverX.reset();
   stepperX.setAcceleration(5000);
@@ -240,23 +262,22 @@ void stallDetect(uint32_t ms)
 
     //Messung
 
-    if (drv_status.sg_result == 0 && modus == -2)
-    { //zurückfahen (modus -2)
+    if (drv_status.sg_result == 0 && goModus == -3)
+    { //zurückfahen (modus -3)
 
-      stepperX.setCurrentPosition(0);
+      stepperX.setCurrentPosition(-400);//einige Steps von 0 weg um anstoßen zu verhindern
 
-      modus = -1;
+      goModus = -2;
       driverX.reset();
       Serial.println(" F ");
       drv_status.sg_result = 1;
       stepperX.moveTo(100000);
     }
-    else if (drv_status.sg_result == 0 && modus == -1)
-    { // an maximum fahren  (modus -1)
+    else if (drv_status.sg_result == 0 && goModus == -2)
+    { // an maximum fahren  (modus -2)
 
       stepperX.stop();
-      MaxSliderPosition = stepperX.currentPosition();
-      modus = 0;
+      MaxSliderPosition = stepperX.currentPosition()-400; // s.o.
       driverX.en_pwm_mode(true); // Toggle stealthChop on TMC2130/2160/5130/5160
       driverX.reset();
       Serial.println(MaxSliderPosition);
@@ -1577,7 +1598,11 @@ void loop()
       SendOSCMessage("/start", 0);
       
 
-    }else if (stepperX.distanceToGo() == 0 && stepperY.distanceToGo() == 0 && stepperZ.distanceToGo() == 0 && goModus != 3) {
+    }else if (goModus == -3 or -2) { // run Stalldetect wenn slider ausgemessen wird.
+    
+      stalldetect();
+      
+     }else if (stepperX.distanceToGo() == 0 && stepperY.distanceToGo() == 0 && stepperZ.distanceToGo() == 0 && goModus != 3) {
       if (pause == 1) {
 
         if (millis() > pause_time) {
