@@ -127,7 +127,7 @@ bool isPause;
 unsigned long pause_time;
 unsigned long pause_timeKeyframe;
 
-bool reversemsg; // Modus 1 reverse an oder aus 
+bool reversemsg; // reverse an oder aus, kann in Modus 1 manuel gändert werden.
 
 int Bildzahl;   //Anzahl der Bilder zwischen zwei Keyframes im Modus2
 
