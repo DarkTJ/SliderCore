@@ -140,6 +140,10 @@ void setup()
   stepperY.setAcceleration(2500);
   stepperZ.setMaxSpeed(50000);
   stepperZ.setAcceleration(2500);
+
+  stepperX.setCurrentPosition(MaxSliderPosition/2);
+  stepperY.setCurrentPosition(MaxPankopf/2);
+  stepperZ.setCurrentPosition(MaxTiltkopf/4);
 }
 
 void SendOSCMessage(OSCMessage msgOUT, int wert);
@@ -166,7 +170,7 @@ float zeitdesMoves(float MaxSpeed, float Acc,float distance) {
 float calcSpeed(float MaxSpeed,float Acc, float distancetoMatch, float distancetoDo) {
 
   float timeToMatch = zeitdesMoves(MaxSpeed,Acc,distancetoMatch);
-  float timeAcc = MaxSpeed/Acc
+  float timeAcc = MaxSpeed/Acc;
   float timefullSpeed = timeToMatch-2*timeAcc;
   float distAcc = 0.5f*Acc*(timeAcc*timeAcc);
   float speed = (distancetoDo-2*distAcc)/timefullSpeed;
@@ -184,17 +188,17 @@ void gotoKeyframe(int Keyframe) {
         stepperX.setMaxSpeed(KeyFrameDauer_0_1);
 
         stepperY.setAcceleration(StandartAcc);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_0_1, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFramePan_0_1-KeyFramePan_0_2));
+        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_0_1, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFramePan_0_1-KeyFramePan_0_2)));
 
         stepperZ.setAcceleration(StandartAcc);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_0_1, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFrameTilt_0_1-KeyFrameTilt_0_2));
+        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_0_1, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFrameTilt_0_1-KeyFrameTilt_0_2)));
 
 
         stepperX.moveTo(KeyFramePosition_0_1);
         stepperY.moveTo(KeyFramePan_0_1);
         stepperZ.moveTo(KeyFrameTilt_0_1);
         
-        pause_time = KeyFramePause_0_1;
+        pause_timeKeyframe = 1000*KeyFramePause_0_1;
       }else {
         gotoKeyframe(Keyframe+1);
       }
@@ -202,21 +206,21 @@ void gotoKeyframe(int Keyframe) {
 
     }else if (Keyframe == 1){
       if (KeyFrame_0_2 == 1) {
-                stepperX.setAcceleration(StandartAcc);
+        stepperX.setAcceleration(StandartAcc);
         stepperX.setMaxSpeed(KeyFrameDauer_0_2);
 
         stepperY.setAcceleration(StandartAcc);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_0_2, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFramePan_0_1-KeyFramePan_0_2));
+        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_0_2, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFramePan_0_1-KeyFramePan_0_2)));
 
         stepperZ.setAcceleration(StandartAcc);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_0_2, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFrameTilt_0_1-KeyFrameTilt_0_2));
+        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_0_2, StandartAcc,abs(KeyFramePosition_0_1-KeyFramePosition_0_2),abs(KeyFrameTilt_0_1-KeyFrameTilt_0_2)));
 
 
         stepperX.moveTo(KeyFramePosition_0_2);
         stepperY.moveTo(KeyFramePan_0_2);
         stepperZ.moveTo(KeyFrameTilt_0_2);
         
-        pause_time = KeyFramePause_0_2;
+        pause_timeKeyframe = 1000*KeyFramePause_0_2;
         
       }else {
         go = 0;
@@ -236,20 +240,42 @@ void gotoKeyframe(int Keyframe) {
         stepperX.setMaxSpeed(KeyFrameDauer_1_1);
 
         stepperY.setAcceleration(KeyFrameBeschleunigung_1_1);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1,abs(KeyFramePosition_1_1-KeyFramePosition_1_2),abs(KeyFramePan_1_1-KeyFramePan_1_2));
+        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1,abs(KeyFramePosition_1_1-KeyFramePosition_1_2),abs(KeyFramePan_1_1-KeyFramePan_1_2)));
 
         stepperZ.setAcceleration(KeyFrameBeschleunigung_1_1);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_1_1, StandartAcc,abs(KeyFramePosition_1_1-KeyFramePosition_1_2),abs(KeyFrameTilt_1_1-KeyFrameTilt_1_2));
+        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1,abs(KeyFramePosition_1_1-KeyFramePosition_1_2),abs(KeyFrameTilt_1_1-KeyFrameTilt_1_2)));
 
 
-        stepperX.moveTo(KeyFramePosition_0_1);
-        stepperY.moveTo(KeyFramePan_0_1);
-        stepperZ.moveTo(KeyFrameTilt_0_1);
+        stepperX.moveTo(KeyFramePosition_1_1);
+        stepperY.moveTo(KeyFramePan_1_1);
+        stepperZ.moveTo(KeyFrameTilt_1_1);
         
-        pause_time = KeyFramePause_0_1;
+        pause_timeKeyframe = 1000*KeyFramePause_1_1;
       }else {
         gotoKeyframe(Keyframe+1);
       }
+    if (Keyframe == 1) {
+      if (KeyFrame_1_2 == 1) {
+        //langsamsts Movement berechnen
+        stepperX.setAcceleration(KeyFrameBeschleunigung_1_2);
+        stepperX.setMaxSpeed(KeyFrameDauer_1_2);
+
+        stepperY.setAcceleration(KeyFrameBeschleunigung_1_2);
+        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2,abs(KeyFramePosition_1_2-KeyFramePosition_1_3),abs(KeyFramePan_1_2-KeyFramePan_1_3)));
+
+        stepperZ.setAcceleration(KeyFrameBeschleunigung_1_2);
+        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2,abs(KeyFramePosition_1_2-KeyFramePosition_1_3),abs(KeyFrameTilt_1_2-KeyFrameTilt_1_3)));
+
+
+        stepperX.moveTo(KeyFramePosition_1_1);
+        stepperY.moveTo(KeyFramePan_1_1);
+        stepperZ.moveTo(KeyFrameTilt_1_1);
+        
+        pause_timeKeyframe = 1000*KeyFramePause_1_1;
+      }else {
+        gotoKeyframe(Keyframe+1);
+      }
+    }
       
     
     
@@ -1584,7 +1610,7 @@ void loop()
   if (go == 1)
   {
         // stepper runnt nur wenn er imm erlaubten bereich ist.
-    if ((stepperX.currentPosition() == 0 && stepperX.distanceToGo() < 0)||(stepperX.currentPosition() == MaxSliderPosition && stepperX.distanceToGo() > 0)) {
+    /*if ((stepperX.currentPosition() == 0 && stepperX.distanceToGo() < 0)||(stepperX.currentPosition() == MaxSliderPosition && stepperX.distanceToGo() > 0)) {
       Serial.println("Endstop hit");
     }else {
       stepperX.run();
@@ -1600,7 +1626,11 @@ void loop()
       Serial.println("Endstop hit");
     }else {
       stepperZ.run();
-    }
+    }*/
+
+    stepperX.run();
+    stepperY.run();
+    stepperZ.run();
       
 
 
@@ -1623,22 +1653,33 @@ void loop()
       SendOSCMessage("/start", 0);
       
 
-    }else if (goModus == -3 or -2) { // run Stalldetect wenn slider ausgemessen wird.
+    }else if (goModus == -3 || goModus == -2) { // run Stalldetect wenn slider ausgemessen wird.
     
-      stalldetect();
+      stallDetect(millis());
       
-     }else if (stepperX.distanceToGo() == 0 && stepperY.distanceToGo() == 0 && stepperZ.distanceToGo() == 0 && goModus != 3) {
-      if (pause == 1) {
+    }else if (stepperX.distanceToGo() == 0 && stepperY.distanceToGo() == 0 && stepperZ.distanceToGo() == 0 && goModus != 3) {
+       Serial.println(isPause);
+      if (isPause == true) {
 
         if (millis() > pause_time) {
           Serial.println("next Keyframe");
 
           gotoKeyframe(NextKeyFrame[goModus]);
-          pause == 0;
+          isPause = false;
+          NextKeyFrame[goModus] = NextKeyFrame[goModus] +1;
+          if (goModus == 0) {
+            if (NextKeyFrame[goModus] == 2)
+              NextKeyFrame[goModus] = 0; 
+          } else if (goModus == 1) {
+            if (NextKeyFrame[goModus] == 4) {
+              NextKeyFrame[goModus] = 0;
+            }
+          }
+          
         }
       }else {
-        pause = 1;
-        pause_time = millis() + pause_time;
+        isPause = true;
+        pause_time = millis() + pause_timeKeyframe;
         Serial.println("Pause Start");
       }
 

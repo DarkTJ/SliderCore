@@ -123,8 +123,9 @@ float intervall2;
 int modus; //Nummer des aktuellen Modi in UI   
 bool go; //ist der Slider an oder ist der Slider aus?
 int goModus;    // In welchem Modus läuft der Slider gerade;
-bool pause;
-uint16_t pause_time;
+bool isPause;
+unsigned long pause_time;
+unsigned long pause_timeKeyframe;
 
 bool reversemsg; // Modus 1 reverse an oder aus 
 
