@@ -128,6 +128,9 @@ unsigned long pause_time;
 unsigned long pause_timeKeyframe;
 
 bool reversemsg; // reverse an oder aus, kann in Modus 1 manuel gändert werden.
+bool accToHigh;
+float speedGlobal;
+float accGlobal;
 
 int Bildzahl;   //Anzahl der Bilder zwischen zwei Keyframes im Modus2
 
