@@ -109,16 +109,25 @@ void setup()
   driverX.en_pwm_mode(true);   // Toggle stealthChop on TMC2130/2160/5130/5160
   driverX.pwm_autoscale(true); // Needed for stealthChop
 
+  //stallguard config
+  /*
+  driverX.TCOOLTHRS(0xFFFFF); // 20bit max
+  driverX.THIGH(0);
+  driverX.semin(5);
+  driverX.semax(2);
+  driverX.sedn(0b01);
+  driverX.sgt(STALL_VALUE);*/
+
   driverY.begin();
   driverY.toff(5);             // Enables driver in software
-  driverY.rms_current(600);    // Set motor RMS current
+  driverY.rms_current(300);    // Set motor RMS current
   driverY.microsteps(16);      // Set microsteps to 1/16th
   driverY.en_pwm_mode(true);   // Toggle stealthChop on TMC2130/2160/5130/5160
   driverY.pwm_autoscale(true); // Needed for stealthChop
 
   driverZ.begin();
   driverZ.toff(5);             // Enables driver in software
-  driverZ.rms_current(600);    // Set motor RMS current
+  driverZ.rms_current(300);    // Set motor RMS current
   driverZ.microsteps(16);      // Set microsteps to 1/16th
   driverZ.en_pwm_mode(true);   // Toggle stealthChop on TMC2130/2160/5130/5160
   driverZ.pwm_autoscale(true); // Needed for stealthChop
@@ -126,12 +135,12 @@ void setup()
   delay(2500); //delay, um den Treibern zeit zum starten zu geben
 
   //setzen von Standartwerten, um Modus 0 sofort nutzbar zu machen, theoretisch auch ohne App.
-  MaxSliderPosition = 60000;
+  MaxSliderPosition = 120000;
   MaxPankopf = 15000;
-  MaxTiltkopf = 30000;
+  MaxTiltkopf = 20000;
   KeyFrame_0_1 = true;
   KeyFrame_0_2 = true;
-  KeyFramePosition_0_2 = 50000;
+  KeyFramePosition_0_2 = MaxSliderPosition-10000;
   KeyFramePosition_0_1 = 10000;
   KeyFrameBeschleunigung_0_1 = StandartAcc;
   KeyFrameBeschleunigung_0_2 = StandartAcc;
@@ -141,8 +150,8 @@ void setup()
   KeyFramePause_0_2 = 8;
   KeyFrameTilt_0_1 = MaxTiltkopf / 4;
   KeyFrameTilt_0_2 = MaxTiltkopf / 4;
-  KeyFramePan_0_1 = (MaxPankopf / 2) + 1000;
-  KeyFramePan_0_2 = (MaxPankopf / 2) - 1000;
+  KeyFramePan_0_1 = (MaxPankopf / 2) - 1000;
+  KeyFramePan_0_2 = (MaxPankopf / 2) + 1000;
 
   stepperX.setMaxSpeed(30000);
   stepperX.setAcceleration(2500);
@@ -856,12 +865,12 @@ void Rotation(OSCMessage &msg, int addrOffset)
   {
     rotationY = rotationY - 0.5f;
 
-    stepperY.move(800 * rotationY);
+    stepperY.move(-800 * rotationY);
   }
   else if (rotationY < 0.45f && goModus == 3)
   {
     rotationY = 0.5f - rotationY;
-    stepperY.move(-800 * rotationY);
+    stepperY.move(800 * rotationY);
   }
 
   if (rotationZ > 0.45f && rotationZ < 0.55f && goModus == 3)
