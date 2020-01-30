@@ -53,7 +53,7 @@ using namespace TMC2130_n;
 #define STALL_VALUE 20
 #define R_SENSE 0.11f
 
-#define StandartAcc 7000
+#define StandartAcc 6000
 #define StandartSpeed 10000
 // Stepper und Steppertimer initialisierung:
 
@@ -144,11 +144,11 @@ void setup()
   KeyFramePan_0_1 = (MaxPankopf / 2) + 1000;
   KeyFramePan_0_2 = (MaxPankopf / 2) - 1000;
 
-  stepperX.setMaxSpeed(50000);
+  stepperX.setMaxSpeed(30000);
   stepperX.setAcceleration(2500);
-  stepperY.setMaxSpeed(50000);
+  stepperY.setMaxSpeed(30000);
   stepperY.setAcceleration(2500);
-  stepperZ.setMaxSpeed(50000);
+  stepperZ.setMaxSpeed(30000);
   stepperZ.setAcceleration(2500);
 
   stepperX.setCurrentPosition(MaxSliderPosition / 2);
@@ -164,37 +164,74 @@ void SendOSCMessage(OSCMessage msgOUT, char *wert);
 
 float zeitdesMoves(float MaxSpeed, float Acc, float distance)
 { //Berechnet mithilfe des Weg-Zeit-Gesetzes
-  float gesZeit;
-  float timeAcc = MaxSpeed / Acc;           //zeit der beschleunigung
-  Serial.println(timeAcc);
-  float distAcc = 0.5f * Acc * (timeAcc * timeAcc); //s = 0,5 · a · t²      distanz der beschleinigung
-  Serial.println(distAcc);
-  float timeMaxSpeed = (distance - 2 * distAcc) / MaxSpeed;                 //zeit zwischen den beiden beschleunigungs/bremsteilen
-  if (timeMaxSpeed < 0)     //wenn zeit negativ == maximale geschwindigkeit wird nie erreicht!!
+  if (distance == 0)
   {
-    timeMaxSpeed = 0;
-    distAcc = distance/2; // da die hälfte der Zeit beschl. wird.
-    timeAcc = sqrtf(distance/(0.5*Acc));    //obrige fromel nach t umgeformt 
+    return MaxPankopf / 4; //Notfall, wenn XAchse sich nicht bewegt (Panik) TO-BE DONE RIGHT
   }
-  Serial.println(timeMaxSpeed);
-  gesZeit = 2 * timeAcc + timeMaxSpeed;
-  Serial.println(gesZeit);
-  return gesZeit;
+  else
+  {
+    float gesZeit;
+    float timeAcc = MaxSpeed / Acc; //zeit der beschleunigung
+    Serial.println(timeAcc);
+    float distAcc = 0.5f * Acc * (timeAcc * timeAcc); //s = 0,5 · a · t²      distanz der beschleinigung
+    Serial.println(distAcc);
+    float timeMaxSpeed = (distance - 2 * distAcc) / MaxSpeed; //zeit zwischen den beiden beschleunigungs/bremsteilen
+    if (timeMaxSpeed < 0)                                     //wenn zeit negativ == maximale geschwindigkeit wird nie erreicht!!
+    {
+      timeMaxSpeed = 0;
+      distAcc = distance / 2;                  // da die hälfte der Zeit beschl. wird.
+      timeAcc = sqrtf(distAcc / (0.5f * Acc)); //obrige fromel nach t umgeformt
+      Serial.print("TimeAccNeu: ");
+      Serial.println(timeAcc);
+    }
+    Serial.println(timeMaxSpeed);
+    gesZeit = 2 * timeAcc + timeMaxSpeed;
+    Serial.println(gesZeit);
+    return gesZeit;
+  }
 }
-void calcSpeed(float MaxSpeed, float Acc, float distancetoMatch, float distancetoDo)
+void calcSpeed(float MaxSpeed, float Acc, float distancetoMatch, float distancetoDo, float timeToMatch)
 { //Berechnet Geschwindigkeit, um die eingegebene Strecke in der angegebenen Zeit zu erreichen
-
   accGlobal = Acc;
-  float timeToMatch = zeitdesMoves(MaxSpeed, Acc, distancetoMatch);
-  float timeAcc = MaxSpeed / Acc;
-  if (timeToMatch/2 < timeAcc) {// wenn die maxmimale speed nie erriecht wird. neuberechnen aber weniger Acceleration;
-    calcSpeed(MaxSpeed,3*(Acc/4),distancetoMatch,distancetoDo);
-    Serial.println("neueAcc");
-  }else{
-  float timefullSpeed = timeToMatch - 2 * timeAcc;
-  float distAcc = 0.5f * Acc * (timeAcc * timeAcc);
-  float speed = (distancetoDo - 2 * distAcc) / timefullSpeed;
-  speedGlobal = speed;}
+  if (distancetoMatch == 0)
+  {                          //wenn XAchse sich nicht bewegt
+    distancetoMatch = 12000; //dont know
+    Serial.println("Xachse Steht...");
+  }
+  else if (distancetoDo == 0)
+  { //wenn die eigene Achse sich nicht bewegt, irgendwelche werte um ekin error zu erzeugen.
+    speedGlobal = StandartSpeed;
+    accGlobal = StandartAcc;
+    Serial.println("Eine Achse Steht");
+  }
+  else
+  {
+    float timeAcc = MaxSpeed / Acc;
+    if (timeToMatch / 2 < timeAcc)
+    { // wenn die maxmimale speed nie erriecht wird. neuberechnen aber MEHR Acceleration;
+      Serial.println("neueAcc");
+      calcSpeed(MaxSpeed, 5 * (Acc / 4), distancetoMatch, distancetoDo, timeToMatch);
+    }
+    else
+    {
+      float timefullSpeed = timeToMatch - 2 * timeAcc;
+      float distAcc = 0.5f * Acc * (timeAcc * timeAcc);
+      float speed = (distancetoDo - 2 * distAcc) / timefullSpeed;
+      if (abs(speed - speedGlobal) < 250)
+      {
+        speedGlobal = speed;
+        Serial.print("Speed: ");
+        Serial.println(speedGlobal);
+      }
+      else
+      {
+        Serial.print("We Try Again: ");
+        Serial.println(speed);
+        speedGlobal = speed;
+        calcSpeed(speed, Acc, distancetoMatch, distancetoDo, timeToMatch);
+      }
+    }
+  }
 }
 
 // wichtigste Funktion, es wird der goModus, und der angestrebte Keyframe als Input erwartet, und damit den Motoren (nach berechnung der Geschwindigkeit+Beschleunigung) der .moveTo() befehl gegeben.
@@ -211,13 +248,19 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(StandartAcc);
         stepperX.setMaxSpeed(KeyFrameDauer_0_1);
 
-        calcSpeed(KeyFrameDauer_0_1, StandartAcc, abs(KeyFramePosition_0_1 - stepperX.currentPosition()), abs(KeyFramePan_0_1 - stepperY.currentPosition()));
+        calcSpeed(KeyFrameDauer_0_1, StandartAcc, abs(KeyFramePosition_0_1 - stepperX.currentPosition()), abs(KeyFramePan_0_1 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_0_1, StandartAcc, abs(KeyFramePosition_0_1 - stepperX.currentPosition())));
         stepperY.setMaxSpeed(speedGlobal);
         stepperY.setAcceleration(accGlobal);
 
-        calcSpeed(KeyFrameDauer_0_1, StandartAcc, abs(KeyFramePosition_0_1 - stepperX.currentPosition()), abs(KeyFrameTilt_0_1 - stepperZ.currentPosition()));
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_0_1, StandartAcc, abs(KeyFramePosition_0_1 - stepperX.currentPosition()), abs(KeyFrameTilt_0_1 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_0_1, StandartAcc, abs(KeyFramePosition_0_1 - stepperX.currentPosition())));
         stepperZ.setAcceleration(accGlobal);
         stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_0_1);
         stepperY.moveTo(KeyFramePan_0_1);
@@ -241,11 +284,20 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(StandartAcc);
         stepperX.setMaxSpeed(KeyFrameDauer_0_2);
 
-        stepperY.setAcceleration(StandartAcc);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_0_2, StandartAcc, abs(KeyFramePosition_0_1 - stepperX.currentPosition()), abs(KeyFramePan_0_1 - stepperY.currentPosition())));
+        calcSpeed(KeyFrameDauer_0_2, StandartAcc, abs(KeyFramePosition_0_2 - stepperX.currentPosition()), abs(KeyFramePan_0_2 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_0_2, StandartAcc, abs(KeyFramePosition_0_2 - stepperX.currentPosition())));
 
-        stepperZ.setAcceleration(StandartAcc);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_0_2, StandartAcc, abs(KeyFramePosition_0_1 - stepperX.currentPosition()), abs(KeyFrameTilt_0_1 - stepperZ.currentPosition())));
+        stepperY.setAcceleration(accGlobal);
+        stepperY.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_0_2, StandartAcc, abs(KeyFramePosition_0_2 - stepperX.currentPosition()), abs(KeyFrameTilt_0_2 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_0_2, StandartAcc, abs(KeyFramePosition_0_2 - stepperX.currentPosition())));
+        stepperZ.setAcceleration(accGlobal);
+        stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_0_2);
         stepperY.moveTo(KeyFramePan_0_2);
@@ -273,11 +325,19 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_1_1);
         stepperX.setMaxSpeed(KeyFrameDauer_1_1);
 
-        stepperY.setAcceleration(KeyFrameBeschleunigung_1_1);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_1 - stepperX.currentPosition()), abs(KeyFramePan_1_1 - stepperY.currentPosition())));
+        calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_1 - stepperX.currentPosition()), abs(KeyFramePan_1_1 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_1 - stepperX.currentPosition())));
+        stepperY.setAcceleration(accGlobal);
+        stepperY.setMaxSpeed(speedGlobal);
 
-        stepperZ.setAcceleration(KeyFrameBeschleunigung_1_1);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_1 - stepperX.currentPosition()), abs(KeyFrameTilt_1_1 - stepperZ.currentPosition())));
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_1 - stepperX.currentPosition()), abs(KeyFrameTilt_1_1 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_1 - stepperX.currentPosition())));
+        stepperZ.setAcceleration(accGlobal);
+        stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_1_1);
         stepperY.moveTo(KeyFramePan_1_1);
@@ -298,11 +358,19 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_1_2);
         stepperX.setMaxSpeed(KeyFrameDauer_1_2);
 
-        stepperY.setAcceleration(KeyFrameBeschleunigung_1_2);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyFramePosition_1_2 - stepperX.currentPosition()), abs(KeyFramePan_1_2 - stepperY.currentPosition())));
+        calcSpeed(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyFramePosition_1_2 - stepperX.currentPosition()), abs(KeyFramePan_1_2 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyFramePosition_1_2 - stepperX.currentPosition())));
+        stepperY.setAcceleration(accGlobal);
+        stepperY.setMaxSpeed(speedGlobal);
 
-        stepperZ.setAcceleration(KeyFrameBeschleunigung_1_2);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyFramePosition_1_2 - stepperX.currentPosition()), abs(KeyFrameTilt_1_2 - stepperZ.currentPosition())));
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyFramePosition_1_2 - stepperX.currentPosition()), abs(KeyFrameTilt_1_2 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyFramePosition_1_2 - stepperX.currentPosition())));
+        stepperZ.setAcceleration(accGlobal);
+        stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_1_2);
         stepperY.moveTo(KeyFramePan_1_2);
@@ -323,11 +391,19 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_1_3);
         stepperX.setMaxSpeed(KeyFrameDauer_1_3);
 
-        stepperY.setAcceleration(KeyFrameBeschleunigung_1_3);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_3 - stepperX.currentPosition()), abs(KeyFramePan_1_3 - stepperY.currentPosition())));
+        calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_3 - stepperX.currentPosition()), abs(KeyFramePan_1_3 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_3 - stepperX.currentPosition())));
+        stepperY.setAcceleration(accGlobal);
+        stepperY.setMaxSpeed(speedGlobal);
 
-        stepperZ.setAcceleration(KeyFrameBeschleunigung_1_3);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_3 - stepperX.currentPosition()), abs(KeyFrameTilt_1_3 - stepperZ.currentPosition())));
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_3 - stepperX.currentPosition()), abs(KeyFrameTilt_1_3 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_3 - stepperX.currentPosition())));
+        stepperZ.setAcceleration(accGlobal);
+        stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_1_3);
         stepperY.moveTo(KeyFramePan_1_3);
@@ -348,11 +424,19 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_1_3);
         stepperX.setMaxSpeed(KeyFrameDauer_1_3);
 
-        stepperY.setAcceleration(KeyFrameBeschleunigung_1_3);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_4 - stepperX.currentPosition()), abs(KeyFramePan_1_4 - stepperY.currentPosition())));
+        calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_4 - stepperX.currentPosition()), abs(KeyFramePan_1_4 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_4 - stepperX.currentPosition())));
+        stepperY.setAcceleration(accGlobal);
+        stepperY.setMaxSpeed(speedGlobal);
 
-        stepperZ.setAcceleration(KeyFrameBeschleunigung_1_3);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_4 - stepperX.currentPosition()), abs(KeyFrameTilt_1_4 - stepperZ.currentPosition())));
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_4 - stepperX.currentPosition()), abs(KeyFrameTilt_1_4 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_4 - stepperX.currentPosition())));
+        stepperZ.setAcceleration(accGlobal);
+        stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_1_4);
         stepperY.moveTo(KeyFramePan_1_4);
@@ -362,7 +446,7 @@ void gotoKeyframe(int Keyframe)
       }
       else
       {
-        gotoKeyframe(0);        // loop zurück
+        gotoKeyframe(0); // loop zurück
       }
     }
   }
@@ -376,11 +460,19 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_2_1);
         stepperX.setMaxSpeed(KeyFrameDauer_2_1);
 
-        stepperY.setAcceleration(KeyFrameBeschleunigung_2_1);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_2_1, KeyFrameBeschleunigung_2_1, abs(KeyFramePosition_2_1 - stepperX.currentPosition()), abs(KeyFramePan_2_1 - stepperY.currentPosition())));
+        calcSpeed(KeyFrameDauer_2_1, KeyFrameBeschleunigung_2_1, abs(KeyFramePosition_2_1 - stepperX.currentPosition()), abs(KeyFramePan_2_1 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_2_1, KeyFrameBeschleunigung_2_1, abs(KeyFramePosition_2_1 - stepperX.currentPosition())));
+        stepperY.setAcceleration(accGlobal);
+        stepperY.setMaxSpeed(speedGlobal);
 
-        stepperZ.setAcceleration(KeyFrameBeschleunigung_2_1);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_2_1, KeyFrameBeschleunigung_2_1, abs(KeyFramePosition_2_1 - stepperX.currentPosition()), abs(KeyFrameTilt_2_1 - stepperZ.currentPosition())));
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_2_1, KeyFrameBeschleunigung_2_1, abs(KeyFramePosition_2_1 - stepperX.currentPosition()), abs(KeyFrameTilt_2_1 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_2_1, KeyFrameBeschleunigung_2_1, abs(KeyFramePosition_2_1 - stepperX.currentPosition())));
+        stepperZ.setAcceleration(accGlobal);
+        stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_2_1);
         stepperY.moveTo(KeyFramePan_2_1);
@@ -401,11 +493,19 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_2_2);
         stepperX.setMaxSpeed(KeyFrameDauer_2_2);
 
-        stepperY.setAcceleration(KeyFrameBeschleunigung_2_2);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_2 - stepperX.currentPosition()), abs(KeyFramePan_2_2 - stepperY.currentPosition())));
+        calcSpeed(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_2 - stepperX.currentPosition()), abs(KeyFramePan_2_2 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_2 - stepperX.currentPosition())));
+        stepperY.setAcceleration(accGlobal);
+        stepperY.setMaxSpeed(speedGlobal);
 
-        stepperZ.setAcceleration(KeyFrameBeschleunigung_2_2);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_2 - stepperX.currentPosition()), abs(KeyFrameTilt_2_2 - stepperZ.currentPosition())));
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_2 - stepperX.currentPosition()), abs(KeyFrameTilt_2_2 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_2 - stepperX.currentPosition())));
+        stepperZ.setAcceleration(accGlobal);
+        stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_2_2);
         stepperY.moveTo(KeyFramePan_2_2);
@@ -423,14 +523,22 @@ void gotoKeyframe(int Keyframe)
       if (KeyFrame_2_3 == 1)
       {
         //langsamsts Movement berechnen
-        stepperX.setAcceleration(KeyFrameBeschleunigung_2_3);
+        stepperX.setAcceleration(KeyFrameBeschleunigung_2_2);
         stepperX.setMaxSpeed(KeyFrameDauer_2_3);
 
-        stepperY.setAcceleration(KeyFrameBeschleunigung_2_3);
-        stepperY.setMaxSpeed(calcSpeed(KeyFrameDauer_2_3, KeyFrameBeschleunigung_2_3, abs(KeyFramePosition_2_3 - stepperX.currentPosition()), abs(KeyFramePan_2_3 - stepperY.currentPosition())));
+        calcSpeed(KeyFrameDauer_2_3, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_3 - stepperX.currentPosition()), abs(KeyFramePan_2_3 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_3 - stepperX.currentPosition())));
+        stepperY.setAcceleration(accGlobal);
+        stepperY.setMaxSpeed(speedGlobal);
 
-        stepperZ.setAcceleration(KeyFrameBeschleunigung_2_3);
-        stepperZ.setMaxSpeed(calcSpeed(KeyFrameDauer_2_3, KeyFrameBeschleunigung_2_3, abs(KeyFramePosition_2_3 - stepperX.currentPosition()), abs(KeyFrameTilt_2_3 - stepperZ.currentPosition())));
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
+
+        calcSpeed(KeyFrameDauer_2_3, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_3 - stepperX.currentPosition()), abs(KeyFrameTilt_2_3 - stepperZ.currentPosition()), zeitdesMoves(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_3 - stepperX.currentPosition())));
+        stepperZ.setAcceleration(accGlobal);
+        stepperZ.setMaxSpeed(speedGlobal);
+
+        accGlobal = 2000000000;
+        speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyFramePosition_2_3);
         stepperY.moveTo(KeyFramePan_2_3);
@@ -467,12 +575,12 @@ void stallDetect(uint32_t ms)
     last_time = ms;
 
     DRV_STATUS_t drv_status{0};
-    drv_status.sr = driverX.DRV_STATUS();     //status des Treibers wird ausgelesen
+    drv_status.sr = driverX.DRV_STATUS(); //status des Treibers wird ausgelesen
 
     //Messung
 
-    if (drv_status.sg_result == 0 && goModus == -3)     //wenn der Stepper irgendwo gegenfährt (sg.result== 0) wobei sg = stallguard
-    { //zurückfahen (modus -3)
+    if (drv_status.sg_result == 0 && goModus == -3) //wenn der Stepper irgendwo gegenfährt (sg.result== 0) wobei sg = stallguard
+    {                                               //zurückfahen (modus -3)
 
       stepperX.setCurrentPosition(-400); //einige Steps von 0 weg um anstoßen zu verhindern   NULLposition
 
@@ -482,11 +590,11 @@ void stallDetect(uint32_t ms)
       drv_status.sg_result = 1;
       stepperX.moveTo(100000);
     }
-    else if (drv_status.sg_result == 0 && goModus == -2)    //wenn der Stepper irgendwo gegenfährt (sg.result== 0) wobei sg = stallguard
-    { // an maximum fahren  (modus -2)
+    else if (drv_status.sg_result == 0 && goModus == -2) //wenn der Stepper irgendwo gegenfährt (sg.result== 0) wobei sg = stallguard
+    {                                                    // an maximum fahren  (modus -2)
 
       stepperX.stop();
-      MaxSliderPosition = stepperX.currentPosition() - 400; // maximalposition, wieder ein stück weg um anstoßen zu verhindern 
+      MaxSliderPosition = stepperX.currentPosition() - 400; // maximalposition, wieder ein stück weg um anstoßen zu verhindern
       driverX.en_pwm_mode(true);                            // Toggle stealthChop on TMC2130/2160/5130/5160
       driverX.reset();
       Serial.println(MaxSliderPosition);
@@ -520,7 +628,7 @@ void randomMovement()
   }
 }
 
-void debugOutput()    //einfache funktion die verschiedene Diagnosewerte des Tribers ausgibt
+void debugOutput() //einfache funktion die verschiedene Diagnosewerte des Tribers ausgibt
 {
 
   static uint32_t last_time = 0;
@@ -601,7 +709,8 @@ void changeModus(int modus)
     SendOSCMessage("/start_label", "Stop");
     SendOSCMessage("/start/color", "red");
     SendOSCMessage("/start", 1);
-  }else if (go == 0)
+  }
+  else if (go == 0)
   { //Slider läuft gerad im ausgewwählten Modus
     SendOSCMessage("/start_label/color", "green");
     SendOSCMessage("/start_label", "Start");
@@ -924,6 +1033,12 @@ void Keyframe1(OSCMessage &msg, int addrOffset)
 void ViewKeyFrame1(OSCMessage &msg, int addrOffset)
 { //Anzeige des 1. Keyframes
   bool view = msg.getFloat(0);
+  stepperX.setMaxSpeed(30000);
+  stepperX.setAcceleration(2500);
+  stepperY.setMaxSpeed(30000);
+  stepperY.setAcceleration(2500);
+  stepperZ.setMaxSpeed(30000);
+  stepperZ.setAcceleration(2500);
 
   if (modus == 0)
   {
@@ -986,7 +1101,7 @@ void BeschleunigungKeyFrame1(OSCMessage &msg, int addrOffset)
 
   if (modus == 1)
   {
-    KeyFrameBeschleunigung_1_1 = StandartAcc * (1.2 - msg.getFloat(0));
+    KeyFrameBeschleunigung_1_1 = StandartAcc * (1.05 - msg.getFloat(0));
     Serial.print("KeyFrameBeschleunigung_1_1?= : ");
     Serial.println(KeyFrameBeschleunigung_1_1);
   }
@@ -996,21 +1111,21 @@ void DauerKeyFrame1(OSCMessage &msg, int addrOffset)
 { //Geschwindigkeit des 1. KeyFrames
   if (modus == 0)
   {
-    KeyFrameDauer_0_1 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_0_1 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 0 1?= : ");
     Serial.println(KeyFrameDauer_0_1);
     SendOSCMessage("/modus_0/dauer_anzeige_k1", zeitdesMoves(KeyFrameDauer_0_1, StandartAcc * 0.5, abs(KeyFramePosition_0_1 - KeyFramePosition_0_2)));
   }
   if (modus == 1)
   {
-    KeyFrameDauer_1_1 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_1_1 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 1 1?= : ");
     Serial.println(KeyFrameDauer_1_1);
     SendOSCMessage("/modus_1/dauer_anzeige_1", zeitdesMoves(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_1 - KeyFramePosition_1_2)));
   }
   if (modus == 2)
   {
-    KeyFrameDauer_2_1 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_2_1 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 2 1?= : ");
     Serial.println(KeyFrameDauer_2_1);
     SendOSCMessage("/modus_2/dauer_anzeige_1", zeitdesMoves(KeyFrameDauer_2_1, KeyFrameBeschleunigung_2_1, abs(KeyFramePosition_2_1 - KeyFramePosition_2_2)));
@@ -1159,6 +1274,12 @@ void Keyframe2(OSCMessage &msg, int addrOffset)
 void ViewKeyFrame2(OSCMessage &msg, int addrOffset)
 { //Anzeige des 2. Keyframes
   bool view = msg.getFloat(0);
+  stepperX.setMaxSpeed(30000);
+  stepperX.setAcceleration(2500);
+  stepperY.setMaxSpeed(30000);
+  stepperY.setAcceleration(2500);
+  stepperZ.setMaxSpeed(30000);
+  stepperZ.setAcceleration(2500);
 
   if (modus == 0)
   {
@@ -1223,14 +1344,14 @@ void BeschleunigungKeyFrame2(OSCMessage &msg, int addrOffset)
 { //Beschleunigung des 2. KeyFrames
   if (modus == 0)
   {
-    KeyFrameBeschleunigung_0_2 = StandartAcc * (1.2 - msg.getFloat(0));
+    KeyFrameBeschleunigung_0_2 = StandartAcc * (1.05 - msg.getFloat(0));
     Serial.print("KeyFrameBeschleunigung_0_2?= : ");
     Serial.println(KeyFrameBeschleunigung_0_2);
   }
 
   if (modus == 1)
   {
-    KeyFrameBeschleunigung_1_2 = StandartAcc * (1.2 - msg.getFloat(0));
+    KeyFrameBeschleunigung_1_2 = StandartAcc * (1.05 - msg.getFloat(0));
     Serial.print("KeyFrameBeschleunigung_1_2?= : ");
     Serial.println(KeyFrameBeschleunigung_1_2);
   }
@@ -1240,21 +1361,21 @@ void DauerKeyFrame2(OSCMessage &msg, int addrOffset)
 { //Geschwindigkeit des 2. KeyFrames
   if (modus == 0)
   {
-    KeyFrameDauer_0_2 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_0_2 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 0 2?= : ");
     Serial.println(KeyFrameDauer_0_2);
     SendOSCMessage("/modus_0/dauer_anzeige_k2", zeitdesMoves(KeyFrameDauer_0_2, StandartAcc * 0.5, abs(KeyFramePosition_0_2 - KeyFramePosition_0_1)));
   }
   if (modus == 1)
   {
-    KeyFrameDauer_1_2 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_1_2 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 1 2?= : ");
     Serial.println(KeyFrameDauer_1_2);
     SendOSCMessage("/modus_1/dauer_anzeige_2", zeitdesMoves(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyFramePosition_1_2 - KeyFramePosition_1_3)));
   }
   if (modus == 2)
   {
-    KeyFrameDauer_2_2 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_2_2 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 2 2?= : ");
     Serial.println(KeyFrameDauer_2_2);
     SendOSCMessage("/modus_2/dauer_anzeige_2", zeitdesMoves(KeyFrameDauer_2_2, KeyFrameBeschleunigung_2_2, abs(KeyFramePosition_2_2 - KeyFramePosition_2_3)));
@@ -1367,6 +1488,12 @@ void Keyframe3(OSCMessage &msg, int addrOffset)
 void ViewKeyFrame3(OSCMessage &msg, int addrOffset)
 { //Anzeige des 3. Keyframes
   bool view = msg.getFloat(0);
+  stepperX.setMaxSpeed(30000);
+  stepperX.setAcceleration(2500);
+  stepperY.setMaxSpeed(30000);
+  stepperY.setAcceleration(2500);
+  stepperZ.setMaxSpeed(30000);
+  stepperZ.setAcceleration(2500);
 
   if (modus == 1)
   {
@@ -1410,7 +1537,7 @@ void BeschleunigungKeyFrame3(OSCMessage &msg, int addrOffset)
 
   if (modus == 1)
   {
-    KeyFrameBeschleunigung_1_3 = StandartAcc * (1.2 - msg.getFloat(0));
+    KeyFrameBeschleunigung_1_3 = StandartAcc * (1.05 - msg.getFloat(0));
     Serial.print("KeyFrameBeschleunigung_1_3?= : ");
     Serial.println(KeyFrameBeschleunigung_1_3);
   }
@@ -1420,14 +1547,14 @@ void DauerKeyFrame3(OSCMessage &msg, int addrOffset)
 { //Geschwindigkeit des 3. KeyFrames
   if (modus == 1)
   {
-    KeyFrameDauer_1_3 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_1_3 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 1 3?= : ");
     Serial.println(KeyFrameDauer_1_3);
     SendOSCMessage("/modus_1/dauer_anzeige_3", zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyFramePosition_1_3 - KeyFramePosition_1_4)));
   }
   if (modus == 2)
   {
-    KeyFrameDauer_2_3 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_2_3 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 2 3?= : ");
     Serial.println(KeyFrameDauer_2_3);
     SendOSCMessage("/modus_2/dauer_anzeige_3", zeitdesMoves(KeyFrameDauer_2_3, KeyFrameBeschleunigung_2_3, abs(KeyFramePosition_2_3 - KeyFramePosition_2_1)));
@@ -1495,6 +1622,12 @@ void Keyframe4(OSCMessage &msg, int addrOffset)
 void ViewKeyFrame4(OSCMessage &msg, int addrOffset)
 { //Anzeige des 4. KeyFrames
   bool view = msg.getFloat(0);
+  stepperX.setMaxSpeed(30000);
+  stepperX.setAcceleration(2500);
+  stepperY.setMaxSpeed(30000);
+  stepperY.setAcceleration(2500);
+  stepperZ.setMaxSpeed(30000);
+  stepperZ.setAcceleration(2500);
 
   if (modus == 1)
   {
@@ -1519,7 +1652,7 @@ void BeschleunigungKeyFrame4(OSCMessage &msg, int addrOffset)
 { //Beschleunigung des 4. KeyFrames
   if (modus == 1)
   {
-    KeyFrameBeschleunigung_1_4 = StandartAcc * (1.2 - msg.getFloat(0));
+    KeyFrameBeschleunigung_1_4 = StandartAcc * (1.05 - msg.getFloat(0));
     Serial.print("KeyFrameBeschleunigung_1_4?= : ");
     Serial.println(KeyFrameBeschleunigung_1_4);
   }
@@ -1529,7 +1662,7 @@ void DauerKeyFrame4(OSCMessage &msg, int addrOffset)
 { //Geschwindigkeit des 4. KeyFrames
   if (modus == 1)
   {
-    KeyFrameDauer_1_4 = StandartSpeed * (1.1 - msg.getFloat(0));
+    KeyFrameDauer_1_4 = StandartSpeed * (1.02 - msg.getFloat(0));
     Serial.print("KeyFrameDauer 1 4?= : ");
     Serial.println(KeyFrameDauer_1_4);
     SendOSCMessage("/modus_1/dauer_anzeige_4", zeitdesMoves(KeyFrameDauer_1_4, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_4 - KeyFramePosition_1_1)));
@@ -1610,7 +1743,8 @@ void updateUI() //updated die UI mit aktueller Poition der einzelnen Achsen.
   SendOSCMessage("/modus_1/reverse_toggle", reversemsg);
 }
 
-void updateUIBIG() {    //updated alle Elemente der UI, seltener, um Nachrichtenflut zu vermeiden. ((vllt mit OSC Bundle Lösen ??))
+void updateUIBIG()
+{ //updated alle Elemente der UI, seltener, um Nachrichtenflut zu vermeiden. ((vllt mit OSC Bundle Lösen ??))
 
   SliderPosition = stepperX.currentPosition();
   Tiltkopf = stepperZ.currentPosition();
@@ -1642,18 +1776,17 @@ void updateUIBIG() {    //updated alle Elemente der UI, seltener, um Nachrichten
   SendOSCMessage("/modus_1/dauer_anzeige_4", zeitdesMoves(KeyFrameDauer_1_4, KeyFrameBeschleunigung_1_1, abs(KeyFramePosition_1_4 - KeyFramePosition_1_1)));
   SendOSCMessage("/modus_1/pause_anzeige_4", KeyFramePause_1_4);
 
-  //Modus 2  
+  //Modus 2
   SendOSCMessage("/modus_2/keyframe_1", KeyFrame_2_1);
   SendOSCMessage("/modus_2/keyframe_2", KeyFrame_2_2);
   SendOSCMessage("/modus_2/keyframe_3", KeyFrame_2_3);
-
 }
 
 #pragma endregion
 #pragma region settings
 // Settings--------------------------------------------------------------------------------------------------------------------------------------------
 
-void SliderEnable(OSCMessage &msg, int addrOffset)      //simpler Knopf zum deaktiviern von AchseX
+void SliderEnable(OSCMessage &msg, int addrOffset) //simpler Knopf zum deaktiviern von AchseX
 {
   slider_enable = msg.getFloat(0);
   digitalWrite(EN_PINX, slider_enable);
@@ -1662,7 +1795,7 @@ void SliderEnable(OSCMessage &msg, int addrOffset)      //simpler Knopf zum deak
   Serial.println(slider_enable);
 }
 
-void PanEnable(OSCMessage &msg, int addrOffset)     //simpler Knopf zum deaktiviern von AchseY
+void PanEnable(OSCMessage &msg, int addrOffset) //simpler Knopf zum deaktiviern von AchseY
 {
   pan_enable = msg.getFloat(0);
   digitalWrite(EN_PINY, pan_enable);
@@ -1671,7 +1804,7 @@ void PanEnable(OSCMessage &msg, int addrOffset)     //simpler Knopf zum deaktivi
   Serial.println(pan_enable);
 }
 
-void TiltEnable(OSCMessage &msg, int addrOffset)    //simpler Knopf zum deaktiviern von AchseZ
+void TiltEnable(OSCMessage &msg, int addrOffset) //simpler Knopf zum deaktiviern von AchseZ
 {
   tilt_enable = msg.getFloat(0);
   digitalWrite(EN_PINZ, tilt_enable);
@@ -1694,14 +1827,14 @@ void Reset(OSCMessage &msg, int addrOffset)
 {
   reset = msg.getFloat(0);
 
-  driverX.reset();            //reset den treiber per spi
+  driverX.reset(); //reset den treiber per spi
   driverY.reset();
   driverZ.reset();
 
-  stepperX.setCurrentPosition(stepperX.currentPosition());      //stoppt den stepper auf seiner aktuellen position
+  stepperX.setCurrentPosition(stepperX.currentPosition()); //stoppt den stepper auf seiner aktuellen position
   stepperY.setCurrentPosition(stepperY.currentPosition());
   stepperZ.setCurrentPosition(stepperZ.currentPosition());
-  go=0;
+  go = 0;
 
   Serial.print("Reset= : ");
   Serial.println(reset);
@@ -1820,7 +1953,8 @@ void loop()
 
     last_time = millis();
   }
-  if (millis() - last_time_long > 10000) {   //nur alle 10s ausführen, falls das Ipad disconnected ist, werden alle Buttons und Werte geupdated
+  if (millis() - last_time_long > 10000)
+  { //nur alle 10s ausführen, falls das Ipad disconnected ist, werden alle Buttons und Werte geupdated
 
     updateUIBIG();
     last_time_long = millis();
@@ -1830,7 +1964,6 @@ void loop()
   // Stepper .run() functions
   if (go == 1)
   {
-
 
     // stepper runnt nur wenn er imm erlaubten bereich ist.
     /*if ((stepperX.currentPosition() == 0 && stepperX.distanceToGo() < 0)||(stepperX.currentPosition() == MaxSliderPosition && stepperX.distanceToGo() > 0)) {
@@ -1858,9 +1991,6 @@ void loop()
     SliderPosition = stepperX.currentPosition();
     Tiltkopf = stepperZ.currentPosition();
     Pankopf = stepperY.currentPosition();
-
-
-
   }
 
   // check, ob das Ziel erreicht wurde.
@@ -1889,31 +2019,52 @@ void loop()
 
         if (millis() > pause_time)
         {
-          Serial.println("next Keyframe");
+          Serial.print("next Keyframe: ");
+          Serial.println(NextKeyFrame[goModus]);
 
           gotoKeyframe(NextKeyFrame[goModus]);
           isPause = false;
 
-          NextKeyFrame[goModus] = NextKeyFrame[goModus] + 1; //nächsten Frame
+          if (reversemsg == 0)
+          {
+            NextKeyFrame[goModus] = NextKeyFrame[goModus] + 1; //nächsten Frame
+          }
+          else
+          {
+            NextKeyFrame[goModus] = NextKeyFrame[goModus] - 1; //Frame vorher
+          }
 
           //check , ob nächster Frame wieder zurück muss;
-          if (goModus == 0)
+          if (reversemsg == 1 && NextKeyFrame[goModus] <= 0)
           {
-            if (NextKeyFrame[goModus] == 2)
-              NextKeyFrame[goModus] = 0;
+            reversemsg = 0;
+            SendOSCMessage("/modus_1/revese_toggle", false);
           }
-          else if (goModus == 1)
+          else
           {
-            if (NextKeyFrame[goModus] == 4)
+            if (goModus == 0)
             {
-              NextKeyFrame[goModus] = 0;
+              if (NextKeyFrame[goModus] >= 1){
+                reversemsg = 1;
+                SendOSCMessage("/modus_1/revese_toggle", true);
+              }
+                
             }
-          }
-          else if (goModus == 2)
-          {
-            if (NextKeyFrame[goModus] == 3)
+            else if (goModus == 1)
             {
-              NextKeyFrame[goModus] = 0;
+              if (NextKeyFrame[goModus] >= 3)
+              {
+                reversemsg = 1;
+                SendOSCMessage("/modus_1/revese_toggle", true);
+              }
+            }
+            else if (goModus == 2)
+            {
+              if (NextKeyFrame[goModus] >= 2)
+              {
+                reversemsg = 1;
+                SendOSCMessage("/modus_1/revese_toggle", true);
+              }
             }
           }
         }
