@@ -114,11 +114,21 @@ float KeyFramePause_2_3;
 float KeyFramePause_1_4;
 
 // Modus 2 
-float fps;
+float fps = 30;
 float sequenzdauer1;
 float sequenzdauer2;
 float intervall1;
 float intervall2;
+float stepsbetweenPicturesX;
+float stepsbetweenPicturesY;
+float stepsbetweenPicturesZ;
+int bilder1; //Anzahl der Bilder
+int bilder2; //Anzahl der Bilder
+uint32_t modus2Waiting;
+float modus2Interval;
+bool triggeredPicture;
+float modus2target;
+
 
 int modus; //Nummer des aktuellen Modi in UI   
 bool go; //ist der Slider an oder ist der Slider aus?
@@ -132,10 +142,8 @@ bool accToHigh;
 float speedGlobal;
 float accGlobal;
 
-int Bildzahl;   //Anzahl der Bilder zwischen zwei Keyframes im Modus2
 
 
-int bilder; //Anzahl der Bilder
 
 
 //Settings
