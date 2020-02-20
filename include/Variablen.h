@@ -28,20 +28,12 @@ bool KeyFrame_1_4; //Keyframes 4
 // Aktuelle Status jedes Modi
 int NextKeyFrame[3]; // für jeden Modi eine Position in der Liste
 
+//
+//Variablen für KeyFrames [Xposition,YPosition,Zposition,Beschleunigung,Dauer,Pause]
+//[Modus]//Keyframe
 
-//Variablen für KeyFrame Position
-float KeyFramePosition_0_1;
-float KeyFramePosition_1_1;
-float KeyFramePosition_2_1;
+float KeyframeXPosition[4][4];          //beachten !! [Modus von 0 bis 3] [Keyframe von 1-4(Keyframe 0 ist vom Programm nutzbar)]
 
-float KeyFramePosition_0_2;
-float KeyFramePosition_1_2;
-float KeyFramePosition_2_2;
-
-float KeyFramePosition_1_3;
-float KeyFramePosition_2_3;
-
-float KeyFramePosition_1_4;
 
 //Variablen für KeyFrame Pan
 float KeyFramePan_0_1;
