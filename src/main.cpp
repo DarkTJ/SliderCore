@@ -150,8 +150,8 @@ void setup()
   KeyFramePause_0_2 = 8;
   KeyFrameTilt_0_1 = MaxTiltkopf / 4;
   KeyFrameTilt_0_2 = MaxTiltkopf / 4;
-  KeyFramePan_0_1 = (MaxPankopf / 2) - 1000;
-  KeyFramePan_0_2 = (MaxPankopf / 2) + 1000;
+  KeyframeYPosition[0][1] = (MaxPankopf / 2) - 1000;
+  KeyframeYPosition[0][2] = (MaxPankopf / 2) + 1000;
 
   stepperX.setMaxSpeed(30000);
   stepperX.setAcceleration(2500);
@@ -259,7 +259,7 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(StandartAcc);
         stepperX.setMaxSpeed(KeyFrameDauer_0_1);
 
-        calcSpeed(KeyFrameDauer_0_1, StandartAcc, abs(KeyframeXPosition[0][1] - stepperX.currentPosition()), abs(KeyFramePan_0_1 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_0_1, StandartAcc, abs(KeyframeXPosition[0][1] - stepperX.currentPosition())));
+        calcSpeed(KeyFrameDauer_0_1, StandartAcc, abs(KeyframeXPosition[0][1] - stepperX.currentPosition()), abs(KeyframeYPosition[0][1] - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_0_1, StandartAcc, abs(KeyframeXPosition[0][1] - stepperX.currentPosition())));
         stepperY.setMaxSpeed(speedGlobal);
         stepperY.setAcceleration(accGlobal);
 
@@ -274,7 +274,7 @@ void gotoKeyframe(int Keyframe)
         speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyframeXPosition[0][1]);
-        stepperY.moveTo(KeyFramePan_0_1);
+        stepperY.moveTo(KeyframeYPosition[0][1]);
         stepperZ.moveTo(KeyFrameTilt_0_1);
 
         pause_timeKeyframe = 1000 * KeyFramePause_0_1;
@@ -295,7 +295,7 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(StandartAcc);
         stepperX.setMaxSpeed(KeyFrameDauer_0_2);
 
-        calcSpeed(KeyFrameDauer_0_2, StandartAcc, abs(KeyframeXPosition[0][2] - stepperX.currentPosition()), abs(KeyFramePan_0_2 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_0_2, StandartAcc, abs(KeyframeXPosition[0][2] - stepperX.currentPosition())));
+        calcSpeed(KeyFrameDauer_0_2, StandartAcc, abs(KeyframeXPosition[0][2] - stepperX.currentPosition()), abs(KeyframeYPosition[0][2] - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_0_2, StandartAcc, abs(KeyframeXPosition[0][2] - stepperX.currentPosition())));
 
         stepperY.setAcceleration(accGlobal);
         stepperY.setMaxSpeed(speedGlobal);
@@ -311,7 +311,7 @@ void gotoKeyframe(int Keyframe)
         speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyframeXPosition[0][2]);
-        stepperY.moveTo(KeyFramePan_0_2);
+        stepperY.moveTo(KeyframeYPosition[0][2]);
         stepperZ.moveTo(KeyFrameTilt_0_2);
 
         pause_timeKeyframe = 1000 * KeyFramePause_0_2;
@@ -336,7 +336,7 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_1_1);
         stepperX.setMaxSpeed(KeyFrameDauer_1_1);
 
-        calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyframeXPosition[1][1] - stepperX.currentPosition()), abs(KeyFramePan_1_1 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyframeXPosition[1][1] - stepperX.currentPosition())));
+        calcSpeed(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyframeXPosition[1][1] - stepperX.currentPosition()), abs(KeyframeYPosition[1][1] - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_1, KeyFrameBeschleunigung_1_1, abs(KeyframeXPosition[1][1] - stepperX.currentPosition())));
         stepperY.setAcceleration(accGlobal);
         stepperY.setMaxSpeed(speedGlobal);
 
@@ -351,7 +351,7 @@ void gotoKeyframe(int Keyframe)
         speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyframeXPosition[1][1]);
-        stepperY.moveTo(KeyFramePan_1_1);
+        stepperY.moveTo(KeyframeYPosition[1][1]);
         stepperZ.moveTo(KeyFrameTilt_1_1);
 
         pause_timeKeyframe = 1000 * KeyFramePause_1_1;
@@ -369,7 +369,7 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_1_2);
         stepperX.setMaxSpeed(KeyFrameDauer_1_2);
 
-        calcSpeed(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyframeXPosition[1][2] - stepperX.currentPosition()), abs(KeyFramePan_1_2 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyframeXPosition[1][2] - stepperX.currentPosition())));
+        calcSpeed(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyframeXPosition[1][2] - stepperX.currentPosition()), abs(KeyframeYPosition[1][2] - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_2, KeyFrameBeschleunigung_1_2, abs(KeyframeXPosition[1][2] - stepperX.currentPosition())));
         stepperY.setAcceleration(accGlobal);
         stepperY.setMaxSpeed(speedGlobal);
 
@@ -384,7 +384,7 @@ void gotoKeyframe(int Keyframe)
         speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyframeXPosition[1][2]);
-        stepperY.moveTo(KeyFramePan_1_2);
+        stepperY.moveTo(KeyframeYPosition[1][2]);
         stepperZ.moveTo(KeyFrameTilt_1_2);
 
         pause_timeKeyframe = 1000 * KeyFramePause_1_2;
@@ -402,7 +402,7 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_1_3);
         stepperX.setMaxSpeed(KeyFrameDauer_1_3);
 
-        calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyframeXPosition[1][3] - stepperX.currentPosition()), abs(KeyFramePan_1_3 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyframeXPosition[1][3] - stepperX.currentPosition())));
+        calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyframeXPosition[1][3] - stepperX.currentPosition()), abs(KeyframeYPosition[1][3] - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyframeXPosition[1][3] - stepperX.currentPosition())));
         stepperY.setAcceleration(accGlobal);
         stepperY.setMaxSpeed(speedGlobal);
 
@@ -417,7 +417,7 @@ void gotoKeyframe(int Keyframe)
         speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyframeXPosition[1][3]);
-        stepperY.moveTo(KeyFramePan_1_3);
+        stepperY.moveTo(KeyframeYPosition[1][3]);
         stepperZ.moveTo(KeyFrameTilt_1_3);
 
         pause_timeKeyframe = 1000 * KeyFramePause_1_3;
@@ -435,7 +435,7 @@ void gotoKeyframe(int Keyframe)
         stepperX.setAcceleration(KeyFrameBeschleunigung_1_3);
         stepperX.setMaxSpeed(KeyFrameDauer_1_3);
 
-        calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyframeXPosition[1][4] - stepperX.currentPosition()), abs(KeyFramePan_1_4 - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyframeXPosition[1][4] - stepperX.currentPosition())));
+        calcSpeed(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyframeXPosition[1][4] - stepperX.currentPosition()), abs(KeyframeYPosition[1][4] - stepperY.currentPosition()), zeitdesMoves(KeyFrameDauer_1_3, KeyFrameBeschleunigung_1_3, abs(KeyframeXPosition[1][4] - stepperX.currentPosition())));
         stepperY.setAcceleration(accGlobal);
         stepperY.setMaxSpeed(speedGlobal);
 
@@ -450,7 +450,7 @@ void gotoKeyframe(int Keyframe)
         speedGlobal = 2000000000;
 
         stepperX.moveTo(KeyframeXPosition[1][4]);
-        stepperY.moveTo(KeyFramePan_1_4);
+        stepperY.moveTo(KeyframeYPosition[1][4]);
         stepperZ.moveTo(KeyFrameTilt_1_4);
 
         pause_timeKeyframe = 1000 * KeyFramePause_1_3;
@@ -477,7 +477,7 @@ void gotoKeyframe(int Keyframe)
         stepperZ.setMaxSpeed(StandartSpeed);
 
         stepsbetweenPicturesX = (KeyframeXPosition[2][1] - stepperX.currentPosition()) / bilder1;
-        stepsbetweenPicturesY = (KeyFramePan_2_1 - stepperY.currentPosition()) / bilder1;
+        stepsbetweenPicturesY = (KeyframeYPosition[2][1] - stepperY.currentPosition()) / bilder1;
         stepsbetweenPicturesZ = (KeyFrameTilt_2_1 - stepperZ.currentPosition()) / bilder1;
 
         if (abs(KeyframeXPosition[2][1] - stepperX.currentPosition()) < 3000)
@@ -510,7 +510,7 @@ void gotoKeyframe(int Keyframe)
         stepperZ.setMaxSpeed(StandartSpeed);
 
         stepsbetweenPicturesX = (KeyframeXPosition[2][2] - stepperX.currentPosition()) / bilder1;
-        stepsbetweenPicturesY = (KeyFramePan_2_2 - stepperY.currentPosition()) / bilder1;
+        stepsbetweenPicturesY = (KeyframeYPosition[2][2] - stepperY.currentPosition()) / bilder1;
         stepsbetweenPicturesZ = (KeyFrameTilt_2_2 - stepperZ.currentPosition()) / bilder1;
 
         if (abs(KeyframeXPosition[2][2] - stepperX.currentPosition()) < 3000)
@@ -543,7 +543,7 @@ void gotoKeyframe(int Keyframe)
         stepperZ.setMaxSpeed(StandartSpeed);
 
         stepsbetweenPicturesX = (KeyframeXPosition[2][3] - stepperX.currentPosition()) / bilder2;
-        stepsbetweenPicturesY = (KeyFramePan_2_3 - stepperY.currentPosition()) / bilder2;
+        stepsbetweenPicturesY = (KeyframeYPosition[2][3] - stepperY.currentPosition()) / bilder2;
         stepsbetweenPicturesZ = (KeyFrameTilt_2_3 - stepperZ.currentPosition()) / bilder2;
 
         if (abs(KeyframeXPosition[2][3] - stepperX.currentPosition()) < 3000)
@@ -940,15 +940,15 @@ void Keyframe1(OSCMessage &msg, int addrOffset)
     if (KeyFrame_0_1 == 1)
     {
       i++;
-      if (KeyframeXPosition[0][1] == 0 && KeyFramePan_0_1 == 0 && KeyFrameTilt_0_1 == 0 && i == 1)
+      if (KeyframeXPosition[0][1] == 0 && KeyframeYPosition[0][1] == 0 && KeyFrameTilt_0_1 == 0 && i == 1)
       {
         KeyframeXPosition[0][1] = SliderPosition;
-        KeyFramePan_0_1 = Pankopf;
+        KeyframeYPosition[0][1] = Pankopf;
         KeyFrameTilt_0_1 = Tiltkopf;
         Serial.print("Keyframe 0 1 Position = : ");
         Serial.println(KeyframeXPosition[0][1]);
         Serial.print("Keyframe 0 1 Pan = : ");
-        Serial.println(KeyFramePan_0_1);
+        Serial.println(KeyframeYPosition[0][1]);
         Serial.print("Keyframe 0 1 Tilt = : ");
         Serial.println(KeyFrameTilt_0_1);
       }
@@ -958,12 +958,12 @@ void Keyframe1(OSCMessage &msg, int addrOffset)
   {
     i = 0;
     KeyframeXPosition[0][1] = 0;
-    KeyFramePan_0_1 = 0;
+    KeyframeYPosition[0][1] = 0;
     KeyFrameTilt_0_1 = 0;
     Serial.print("Keyframe 0 1 Position = : ");
     Serial.println(KeyframeXPosition[0][1]);
     Serial.print("Keyframe 0 1 Pan = : ");
-    Serial.println(KeyFramePan_0_1);
+    Serial.println(KeyframeYPosition[0][1]);
     Serial.print("Keyframe 0 1 Tilt = : ");
     Serial.println(KeyFrameTilt_0_1);
   }
@@ -976,15 +976,15 @@ void Keyframe1(OSCMessage &msg, int addrOffset)
     if (KeyFrame_1_1 == 1)
     {
       i++;
-      if (KeyframeXPosition[1][1] == 0 && KeyFramePan_1_1 == 0 && KeyFrameTilt_1_1 == 0 && i == 1)
+      if (KeyframeXPosition[1][1] == 0 && KeyframeYPosition[1][1] == 0 && KeyFrameTilt_1_1 == 0 && i == 1)
       {
         KeyframeXPosition[1][1] = SliderPosition;
-        KeyFramePan_1_1 = Pankopf;
+        KeyframeYPosition[1][1] = Pankopf;
         KeyFrameTilt_1_1 = Tiltkopf;
         Serial.print("Keyframe 1 1 Position = : ");
         Serial.println(KeyframeXPosition[1][1]);
         Serial.print("Keyframe 1 1 Pan = : ");
-        Serial.println(KeyFramePan_1_1);
+        Serial.println(KeyframeYPosition[1][1]);
         Serial.print("Keyframe 1 1 Tilt = : ");
         Serial.println(KeyFrameTilt_1_1);
       }
@@ -993,12 +993,12 @@ void Keyframe1(OSCMessage &msg, int addrOffset)
     {
       i = 0;
       KeyframeXPosition[1][1] = 0;
-      KeyFramePan_1_1 = 0;
+      KeyframeYPosition[1][1] = 0;
       KeyFrameTilt_1_1 = 0;
       Serial.print("Keyframe 1 1 Position = : ");
       Serial.println(KeyframeXPosition[1][1]);
       Serial.print("Keyframe 1 1 Pan = : ");
-      Serial.println(KeyFramePan_1_1);
+      Serial.println(KeyframeYPosition[1][1]);
       Serial.print("Keyframe 1 1 Tilt = : ");
       Serial.println(KeyFrameTilt_1_1);
     }
@@ -1012,15 +1012,15 @@ void Keyframe1(OSCMessage &msg, int addrOffset)
     if (KeyFrame_2_1 == 1)
     {
       i++;
-      if (KeyframeXPosition[2][1] == 0 && KeyFramePan_2_1 == 0 && KeyFrameTilt_2_1 == 0 && i == 1)
+      if (KeyframeXPosition[2][1] == 0 && KeyframeYPosition[2][1] == 0 && KeyFrameTilt_2_1 == 0 && i == 1)
       {
         KeyframeXPosition[2][1] = SliderPosition;
-        KeyFramePan_2_1 = Pankopf;
+        KeyframeYPosition[2][1] = Pankopf;
         KeyFrameTilt_2_1 = Tiltkopf;
         Serial.print("Keyframe 2 1 Position = : ");
         Serial.println(KeyframeXPosition[2][1]);
         Serial.print("Keyframe 2 1 Pan = : ");
-        Serial.println(KeyFramePan_2_1);
+        Serial.println(KeyframeYPosition[2][1]);
         Serial.print("Keyframe 2 1 Tilt = : ");
         Serial.println(KeyFrameTilt_2_1);
       }
@@ -1029,12 +1029,12 @@ void Keyframe1(OSCMessage &msg, int addrOffset)
     {
       i = 0;
       KeyframeXPosition[2][1] = 0;
-      KeyFramePan_2_1 = 0;
+      KeyframeYPosition[2][1] = 0;
       KeyFrameTilt_2_1 = 0;
       Serial.print("Keyframe 2 1 Position = : ");
       Serial.println(KeyframeXPosition[2][1]);
       Serial.print("Keyframe 2 1 Pan = : ");
-      Serial.println(KeyFramePan_2_1);
+      Serial.println(KeyframeYPosition[2][1]);
       Serial.print("Keyframe 2 1 Tilt = : ");
       Serial.println(KeyFrameTilt_2_1);
     }
@@ -1059,7 +1059,7 @@ void ViewKeyFrame1(OSCMessage &msg, int addrOffset)
     {
 
       stepperX.moveTo(KeyframeXPosition[0][1]);
-      stepperY.moveTo(KeyFramePan_0_1);
+      stepperY.moveTo(KeyframeYPosition[0][1]);
       stepperZ.moveTo(KeyFrameTilt_0_1);
       goModus = -1;
       go = 1;
@@ -1077,7 +1077,7 @@ void ViewKeyFrame1(OSCMessage &msg, int addrOffset)
     if (view == 1)
     {
       stepperX.moveTo(KeyframeXPosition[1][1]);
-      stepperY.moveTo(KeyFramePan_1_1);
+      stepperY.moveTo(KeyframeYPosition[1][1]);
       stepperZ.moveTo(KeyFrameTilt_1_1);
       goModus = -1;
       go = 1;
@@ -1095,7 +1095,7 @@ void ViewKeyFrame1(OSCMessage &msg, int addrOffset)
     if (view == 1)
     {
       stepperX.moveTo(KeyframeXPosition[2][1]);
-      stepperY.moveTo(KeyFramePan_2_1);
+      stepperY.moveTo(KeyframeYPosition[2][1]);
       stepperZ.moveTo(KeyFrameTilt_2_1);
       goModus = -1;
       go = 1;
@@ -1181,15 +1181,15 @@ void Keyframe2(OSCMessage &msg, int addrOffset)
     if (KeyFrame_0_2 == 1)
     {
       i++;
-      if (KeyframeXPosition[0][2] == 0 && KeyFramePan_0_2 == 0 && KeyFrameTilt_0_2 == 0 && i == 1)
+      if (KeyframeXPosition[0][2] == 0 && KeyframeYPosition[0][2] == 0 && KeyFrameTilt_0_2 == 0 && i == 1)
       {
         KeyframeXPosition[0][2] = SliderPosition;
-        KeyFramePan_0_2 = Pankopf;
+        KeyframeYPosition[0][2] = Pankopf;
         KeyFrameTilt_0_2 = Tiltkopf;
         Serial.print("Keyframe 0 2 Position = : ");
         Serial.println(KeyframeXPosition[0][2]);
         Serial.print("Keyframe 0 2 Pan = : ");
-        Serial.println(KeyFramePan_0_2);
+        Serial.println(KeyframeYPosition[0][2]);
         Serial.print("Keyframe 0 2 Tilt = : ");
         Serial.println(KeyFrameTilt_0_2);
       }
@@ -1198,12 +1198,12 @@ void Keyframe2(OSCMessage &msg, int addrOffset)
     {
       i = 0;
       KeyframeXPosition[0][2] = 0;
-      KeyFramePan_0_2 = 0;
+      KeyframeYPosition[0][2] = 0;
       KeyFrameTilt_0_2 = 0;
       Serial.print("Keyframe 0 2 Position = : ");
       Serial.println(KeyframeXPosition[0][2]);
       Serial.print("Keyframe 0 2 Pan = : ");
-      Serial.println(KeyFramePan_0_2);
+      Serial.println(KeyframeYPosition[0][2]);
       Serial.print("Keyframe 0 2 Tilt = : ");
       Serial.println(KeyFrameTilt_0_2);
     }
@@ -1217,15 +1217,15 @@ void Keyframe2(OSCMessage &msg, int addrOffset)
     if (KeyFrame_1_2 == 1)
     {
       i++;
-      if (KeyframeXPosition[1][2] == 0 && KeyFramePan_1_2 == 0 && KeyFrameTilt_1_2 == 0 && i == 1)
+      if (KeyframeXPosition[1][2] == 0 && KeyframeYPosition[1][2] == 0 && KeyFrameTilt_1_2 == 0 && i == 1)
       {
         KeyframeXPosition[1][2] = SliderPosition;
-        KeyFramePan_1_2 = Pankopf;
+        KeyframeYPosition[1][2] = Pankopf;
         KeyFrameTilt_1_2 = Tiltkopf;
         Serial.print("Keyframe 1 2 Position = : ");
         Serial.println(KeyframeXPosition[1][2]);
         Serial.print("Keyframe 1 2 Pan = : ");
-        Serial.println(KeyFramePan_1_2);
+        Serial.println(KeyframeYPosition[1][2]);
         Serial.print("Keyframe 1 2 Tilt = : ");
         Serial.println(KeyFrameTilt_1_2);
       }
@@ -1235,12 +1235,12 @@ void Keyframe2(OSCMessage &msg, int addrOffset)
     {
       i = 0;
       KeyframeXPosition[1][2] = 0;
-      KeyFramePan_1_2 = 0;
+      KeyframeYPosition[1][2] = 0;
       KeyFrameTilt_1_2 = 0;
       Serial.print("Keyframe 1 2 Position = : ");
       Serial.println(KeyframeXPosition[1][2]);
       Serial.print("Keyframe 1 2 Pan = : ");
-      Serial.println(KeyFramePan_1_2);
+      Serial.println(KeyframeYPosition[1][2]);
       Serial.print("Keyframe 1 2 Tilt = : ");
       Serial.println(KeyFrameTilt_1_2);
     }
@@ -1254,15 +1254,15 @@ void Keyframe2(OSCMessage &msg, int addrOffset)
     if (KeyFrame_2_2 == 1)
     {
       i++;
-      if (KeyframeXPosition[2][2] == 0 && KeyFramePan_2_2 == 0 && KeyFrameTilt_2_2 == 0 && i == 1)
+      if (KeyframeXPosition[2][2] == 0 && KeyframeYPosition[2][2] == 0 && KeyFrameTilt_2_2 == 0 && i == 1)
       {
         KeyframeXPosition[2][2] = SliderPosition;
-        KeyFramePan_2_2 = Pankopf;
+        KeyframeYPosition[2][2] = Pankopf;
         KeyFrameTilt_2_2 = Tiltkopf;
         Serial.print("Keyframe 2 2 Position = : ");
         Serial.println(KeyframeXPosition[2][2]);
         Serial.print("Keyframe 2 2 Pan = : ");
-        Serial.println(KeyFramePan_2_2);
+        Serial.println(KeyframeYPosition[2][2]);
         Serial.print("Keyframe 2 2 Tilt = : ");
         Serial.println(KeyFrameTilt_2_2);
       }
@@ -1271,12 +1271,12 @@ void Keyframe2(OSCMessage &msg, int addrOffset)
     {
       i = 0;
       KeyframeXPosition[2][2] = 0;
-      KeyFramePan_2_2 = 0;
+      KeyframeYPosition[2][2] = 0;
       KeyFrameTilt_2_2 = 0;
       Serial.print("Keyframe 2 2 Position = : ");
       Serial.println(KeyframeXPosition[2][2]);
       Serial.print("Keyframe 2 2 Pan = : ");
-      Serial.println(KeyFramePan_2_2);
+      Serial.println(KeyframeYPosition[2][2]);
       Serial.print("Keyframe 2 2 Tilt = : ");
       Serial.println(KeyFrameTilt_2_2);
     }
@@ -1300,7 +1300,7 @@ void ViewKeyFrame2(OSCMessage &msg, int addrOffset)
     if (view == 1)
     {
       stepperX.moveTo(KeyframeXPosition[0][2]);
-      stepperY.moveTo(KeyFramePan_0_2);
+      stepperY.moveTo(KeyframeYPosition[0][2]);
       stepperZ.moveTo(KeyFrameTilt_0_2);
       goModus = -1;
       go = 1;
@@ -1319,7 +1319,7 @@ void ViewKeyFrame2(OSCMessage &msg, int addrOffset)
       if (view == 1)
       {
         stepperX.moveTo(KeyframeXPosition[1][2]);
-        stepperY.moveTo(KeyFramePan_1_2);
+        stepperY.moveTo(KeyframeYPosition[1][2]);
         stepperZ.moveTo(KeyFrameTilt_1_2);
         goModus = -1;
         go = 1;
@@ -1339,7 +1339,7 @@ void ViewKeyFrame2(OSCMessage &msg, int addrOffset)
       if (view == 1)
       {
         stepperX.moveTo(KeyframeXPosition[2][2]);
-        stepperY.moveTo(KeyFramePan_2_2);
+        stepperY.moveTo(KeyframeYPosition[2][2]);
         stepperZ.moveTo(KeyFrameTilt_2_2);
         goModus = -1;
         go = 1;
@@ -1433,15 +1433,15 @@ void Keyframe3(OSCMessage &msg, int addrOffset)
     if (KeyFrame_1_3 == 1)
     {
       i++;
-      if (KeyframeXPosition[1][3] == 0 && KeyFramePan_1_3 == 0 && KeyFrameTilt_1_3 == 0 && i == 1)
+      if (KeyframeXPosition[1][3] == 0 && KeyframeYPosition[1][3] == 0 && KeyFrameTilt_1_3 == 0 && i == 1)
       {
         KeyframeXPosition[1][3] = SliderPosition;
-        KeyFramePan_1_3 = Pankopf;
+        KeyframeYPosition[1][3] = Pankopf;
         KeyFrameTilt_1_3 = Tiltkopf;
         Serial.print("Keyframe 1 3 Position = : ");
         Serial.println(KeyframeXPosition[1][3]);
         Serial.print("Keyframe 1 3 Pan = : ");
-        Serial.println(KeyFramePan_1_3);
+        Serial.println(KeyframeYPosition[1][3]);
         Serial.print("Keyframe 1 3 Tilt = : ");
         Serial.println(KeyFrameTilt_1_3);
       }
@@ -1450,12 +1450,12 @@ void Keyframe3(OSCMessage &msg, int addrOffset)
     {
       i = 0;
       KeyframeXPosition[1][3] = 0;
-      KeyFramePan_1_3 = 0;
+      KeyframeYPosition[1][3] = 0;
       KeyFrameTilt_1_3 = 0;
       Serial.print("Keyframe 1 3 Position = : ");
       Serial.println(KeyframeXPosition[1][3]);
       Serial.print("Keyframe 1 3 Pan = : ");
-      Serial.println(KeyFramePan_1_3);
+      Serial.println(KeyframeYPosition[1][3]);
       Serial.print("Keyframe 1 3 Tilt = : ");
       Serial.println(KeyFrameTilt_1_3);
     }
@@ -1469,15 +1469,15 @@ void Keyframe3(OSCMessage &msg, int addrOffset)
     if (KeyFrame_2_3 == 1)
     {
       i++;
-      if (KeyframeXPosition[2][3] == 0 && KeyFramePan_2_3 == 0 && KeyFrameTilt_2_3 == 0 && i == 1)
+      if (KeyframeXPosition[2][3] == 0 && KeyframeYPosition[2][3] == 0 && KeyFrameTilt_2_3 == 0 && i == 1)
       {
         KeyframeXPosition[2][3] = SliderPosition;
-        KeyFramePan_2_3 = Pankopf;
+        KeyframeYPosition[2][3] = Pankopf;
         KeyFrameTilt_2_3 = Tiltkopf;
         Serial.print("Keyframe 2 3 Position = : ");
         Serial.println(KeyframeXPosition[2][3]);
         Serial.print("Keyframe 2 3 Pan = : ");
-        Serial.println(KeyFramePan_2_3);
+        Serial.println(KeyframeYPosition[2][3]);
         Serial.print("Keyframe 2 3 Tilt = : ");
         Serial.println(KeyFrameTilt_2_3);
       }
@@ -1486,12 +1486,12 @@ void Keyframe3(OSCMessage &msg, int addrOffset)
     {
       i = 0;
       KeyframeXPosition[2][3] = 0;
-      KeyFramePan_2_3 = 0;
+      KeyframeYPosition[2][3] = 0;
       KeyFrameTilt_2_3 = 0;
       Serial.print("Keyframe 2 3 Position = : ");
       Serial.println(KeyframeXPosition[2][3]);
       Serial.print("Keyframe 2 3 Pan = : ");
-      Serial.println(KeyFramePan_2_3);
+      Serial.println(KeyframeYPosition[2][3]);
       Serial.print("Keyframe 2 3 Tilt = : ");
       Serial.println(KeyFrameTilt_2_3);
     }
@@ -1515,7 +1515,7 @@ void ViewKeyFrame3(OSCMessage &msg, int addrOffset)
     if (view == 1)
     {
       stepperX.moveTo(KeyframeXPosition[1][3]);
-      stepperY.moveTo(KeyFramePan_1_3);
+      stepperY.moveTo(KeyframeYPosition[1][3]);
       stepperZ.moveTo(KeyFrameTilt_1_3);
       goModus = -1;
       go = 1;
@@ -1533,7 +1533,7 @@ void ViewKeyFrame3(OSCMessage &msg, int addrOffset)
     if (view == 1)
     {
       stepperX.moveTo(KeyframeXPosition[2][3]);
-      stepperY.moveTo(KeyFramePan_2_3);
+      stepperY.moveTo(KeyframeYPosition[2][3]);
       stepperZ.moveTo(KeyFrameTilt_2_3);
       goModus = -1;
       go = 1;
@@ -1604,15 +1604,15 @@ void Keyframe4(OSCMessage &msg, int addrOffset)
   if (KeyFrame_1_4 == 1)
   {
     i++;
-    if (KeyframeXPosition[1][4] == 0 && KeyFramePan_1_4 == 0 && KeyFrameTilt_1_4 == 0 && i == 1)
+    if (KeyframeXPosition[1][4] == 0 && KeyframeYPosition[1][4] == 0 && KeyFrameTilt_1_4 == 0 && i == 1)
     {
       KeyframeXPosition[1][4] = SliderPosition;
-      KeyFramePan_1_4 = Pankopf;
+      KeyframeYPosition[1][4] = Pankopf;
       KeyFrameTilt_1_4 = Tiltkopf;
       Serial.print("Keyframe 1 4 Position = : ");
       Serial.println(KeyframeXPosition[1][4]);
       Serial.print("Keyframe 1 4 Pan = : ");
-      Serial.println(KeyFramePan_1_4);
+      Serial.println(KeyframeYPosition[1][4]);
       Serial.print("Keyframe 1 4 Tilt = : ");
       Serial.println(KeyFrameTilt_1_4);
     }
@@ -1621,12 +1621,12 @@ void Keyframe4(OSCMessage &msg, int addrOffset)
   {
     i = 0;
     KeyframeXPosition[1][4] = 0;
-    KeyFramePan_1_4 = 0;
+    KeyframeYPosition[1][4] = 0;
     KeyFrameTilt_1_4 = 0;
     Serial.print("Keyframe 1 4 Position = : ");
     Serial.println(KeyframeXPosition[1][4]);
     Serial.print("Keyframe 1 4 Pan = : ");
-    Serial.println(KeyFramePan_1_4);
+    Serial.println(KeyframeYPosition[1][4]);
     Serial.print("Keyframe 1 4 Tilt = : ");
     Serial.println(KeyFrameTilt_1_4);
   }
@@ -1649,7 +1649,7 @@ void ViewKeyFrame4(OSCMessage &msg, int addrOffset)
     if (view == 1)
     {
       stepperX.moveTo(KeyframeXPosition[1][4]);
-      stepperY.moveTo(KeyFramePan_1_4);
+      stepperY.moveTo(KeyframeYPosition[1][4]);
       stepperZ.moveTo(KeyFrameTilt_1_4);
       goModus = -1;
       go = 1;
